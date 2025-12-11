@@ -52,55 +52,37 @@ const PR = pocketRadius;
 const cornerOffset = 14; // ajusta quanto as bocas dos cantos saem para a diagonal (aumente se quiser mais "pra fora")
 const midOffset = 14;    // offset para as bocas do meio (mantive parecido com versão anterior)
 
-const mouthPositions = [
-  // Top-left  -> desloca para cima+esquerda (fora do felt)
-  {
-    px: pockets[0].x,
-    py: pockets[0].y,
-    mouthX: pockets[0].x - cornerOffset,
-    mouthY: pockets[0].y - cornerOffset
-  },
+// === nova versão: posicionamento automático "para dentro" (mais perto do pano) ===
+// inwardOffset controla quão perto do felt a boca fica (px). Use valores entre 4 e 14.
+// Valores pequenos => boca mais junto ao pano; valores maiores => boca mais para a madeira.
+const inwardOffset = 8; // ajuste aqui: 6-10 costuma ficar bom no mobile
 
-  // Top-middle -> centralizado acima
-  {
-    px: pockets[1].x,
-    py: pockets[1].y,
-    mouthX: pockets[1].x,
-    mouthY: pockets[1].y - midOffset
-  },
+const mouthPositions = pockets.map(p => {
+  // direção do pocket para o centro da mesa (aponta para o felt)
+  let dx = (cx) - p.x;
+  let dy = (cy) - p.y;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len; dy /= len;
 
-  // Top-right -> desloca para cima+direita
-  {
-    px: pockets[2].x,
-    py: pockets[2].y,
-    mouthX: pockets[2].x + cornerOffset,
-    mouthY: pockets[2].y - cornerOffset
-  },
+  // mouth fica INWARD (em direção ao felt) a partir do pocket
+  const mouthX = p.x + dx * inwardOffset;
+  const mouthY = p.y + dy * inwardOffset;
 
-  // Bottom-left -> desloca para baixo+esquerda
-  {
-    px: pockets[3].x,
-    py: pockets[3].y,
-    mouthX: pockets[3].x - cornerOffset,
-    mouthY: pockets[3].y + cornerOffset
-  },
+  // dirX/dirY: apontam para o centro (usadas para rotacionar o desenho)
+  let dirX = (cx) - mouthX;
+  let dirY = (cy) - mouthY;
+  const L = Math.hypot(dirX, dirY) || 1;
+  dirX /= L; dirY /= L;
 
-  // Bottom-middle -> centralizado abaixo
-  {
-    px: pockets[4].x,
-    py: pockets[4].y,
-    mouthX: pockets[4].x,
-    mouthY: pockets[4].y + midOffset
-  },
-
-  // Bottom-right -> desloca para baixo+direita
-  {
-    px: pockets[5].x,
-    py: pockets[5].y,
-    mouthX: pockets[5].x + cornerOffset,
-    mouthY: pockets[5].y + cornerOffset
-  }
-];
+  return {
+    px: p.x,
+    py: p.y,
+    mouthX,
+    mouthY,
+    dirX,
+    dirY
+  };
+});
 
 // recalcula dirX/dirY para garantir que todas apontem para o centro
 for (let m of mouthPositions) {
