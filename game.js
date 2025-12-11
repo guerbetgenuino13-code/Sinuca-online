@@ -20,6 +20,16 @@ let simulationRunning = false;
 // pull-back (recuo real do taco)
 let pullBack = 0;      // recuo atual (px)
 let maxPullBack = 80;  // limite máximo de recuo (ajuste se quiser)
+// força via barra (seletor independente)
+let shotPower = 0;            // 0..36
+let isAdjustingPower = false; // true enquanto arrasta a barra
+// configurações da barra (tamanho/posição em px — ajuste se quiser)
+const powerBar = {
+  x: 40,
+  y: null,   // vamos calcular dinamicamente como H/2 - barH/2 (no draw)
+  w: 200,
+  h: 20
+};
 
 const table = {
   x: railOuter,
