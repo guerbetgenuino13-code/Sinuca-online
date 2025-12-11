@@ -48,29 +48,26 @@ function toCanvasCoords(clientX, clientY) {
 
 /* ---------- pointer handlers (pointer API cobre mouse + touch) ---------- */
 function onPointerDown(e) {
-  const pos = (e.touches && e.touches[0])
-    ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
-    : toCanvasCoords(e.clientX, e.clientY);
+    if (!areBallsStopped()) return;
 
-  const white = balls[0];
-  const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
+    const pos = (e.touches && e.touches[0])
+        ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
+        : toCanvasCoords(e.clientX, e.clientY);
 
-  // Se bolas paradas → libera mira livre
-  if (areBallsStopped()) {
-    aiming = true;
-    isDragging = true;
-    mouse = pos;
-    pullBack = 0;
-    return;
-  }
+    const white = balls[0];
+    const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
-  if (dist <= white.r + 140) {   // jogador tocou perto da bola branca
-    aiming = true;
-    isDragging = true;
-    mouse = pos;
-    pullBack = 0;
-} else {
-    // não desativa mira se o jogo está parado
+    // Jogador tocou na área útil da mira
+    if (dist <= white.r + 140) {
+        aiming = true;
+        isDragging = true;
+        mouse = pos;
+        pullBack = 0;
+        return;
+    }
+
+    // Tocou fora → NÃO desligar mira se o jogo está parado
+    // (mantém mira livre automaticamente)
     if (!areBallsStopped()) {
         aiming = false;
         isDragging = false;
