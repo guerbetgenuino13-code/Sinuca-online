@@ -75,7 +75,7 @@ function onPointerDown(e) {
 }
 
 function onPointerMove(e) {
-    if (!aiming || !isDragging) return;
+    if (!aiming) return; // permite ajustar recuo mesmo sem "arrastar"
 
     const pos = (e.touches && e.touches[0])
         ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
