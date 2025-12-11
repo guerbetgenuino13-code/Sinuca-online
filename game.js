@@ -75,30 +75,36 @@ function onPointerDown(e) {
 }
 
 function onPointerMove(e) {
-  if (!aiming || !isDragging) return;
+    if (!aiming || !isDragging) return;
 
-  const pos = (e.touches && e.touches[0])
-    ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
-    : toCanvasCoords(e.clientX, e.clientY);
+    const pos = (e.touches && e.touches[0])
+        ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
+        : toCanvasCoords(e.clientX, e.clientY);
 
-  mouse = pos;
+    mouse = pos;
 
-  // calcula recuo real (pull-back) — só conta quando o dedo vai PARA TRÁS da bola
-  const white = balls[0];
-  const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
+    // ===== cálculo do recuo (pullBack) =====
+    const white = balls[0];
 
-  // ponto da ponta do taco (próximo à bola)
-  const tipX = white.x - Math.cos(ang) * (white.r + 8);
-  const tipY = white.y - Math.sin(ang) * (white.r + 8);
+    // Ângulo da mira
+    const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
 
-  // vetor do tip -> dedo
-  const vx = mouse.x - tipX;
-  const vy = mouse.y - tipY;
+    // Ponto da ponta do taco (tip)
+    const tipX = white.x - Math.cos(ang) * (white.r + 4);
+    const tipY = white.y - Math.sin(ang) * (white.r + 4);
 
-  // componente do vetor na direção OPOSTA ao ang (quanto "puxa para trás")
-  const distBack = vx * -Math.cos(ang) + vy * -Math.sin(ang);
+    // Vetor da ponta -> dedo
+    const vx = mouse.x - tipX;
+    const vy = mouse.y - tipY;
 
-  pullBack = Math.max(0, Math.min(maxPullBack, distBack));
+    // Projeção desse vetor NA DIREÇÃO CONTRÁRIA do taco
+    const distBack = vx * -Math.cos(ang) + vy * -Math.sin(ang);
+
+    // Limite máximo de recuo visual
+    const maxPullBack = 120;
+
+    // Atualiza recuo real do taco
+    pullBack = Math.max(0, Math.min(maxPullBack, distBack));
 }
 
 function onPointerUp(e) {
