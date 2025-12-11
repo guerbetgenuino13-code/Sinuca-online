@@ -45,7 +45,6 @@ function toCanvasCoords(clientX, clientY) {
 
 /* ---------- pointer handlers (pointer API cobre mouse + touch) ---------- */
 function onPointerDown(e) {
-  if (!areBallsStopped()) return;
 
   const pos = (e.touches && e.touches[0])
     ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
@@ -54,22 +53,23 @@ function onPointerDown(e) {
   const white = balls[0];
   const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
-  // Se bolas pararam → mira livre
-if (areBallsStopped()) {
+  // 🎯 Se as bolas estão paradas → mira livre sempre
+  if (areBallsStopped()) {
     aiming = true;
     isDragging = true;
     mouse = pos;
     return;
-}
+  }
 
-// Caso contrário, mantém a regra antiga:
-if (dist <= white.r + 35) {
+  // 🎯 Se bola está em movimento → só mira se tocar perto dela
+  if (dist <= white.r + 35) {
     aiming = true;
     isDragging = true;
     mouse = pos;
-} else {
+  } else {
     aiming = false;
     isDragging = false;
+  }
 }
 
 function onPointerMove(e) {
