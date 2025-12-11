@@ -102,39 +102,33 @@ function onPointerMove(e) {
 }
 
 function onPointerUp(e) {
-    // Só pode tacar se estava arrastando para trás
     if (!isDragging) return;
-
     isDragging = false;
 
-    // Se não estava mirando, não faz nada
     if (!aiming) return;
 
-    // --- CALCULA A TACADA ---
     const white = balls[0];
+
+    // direção da mira
     const dx = mouse.x - white.x;
     const dy = mouse.y - white.y;
+    const angle = Math.atan2(dy, dx);
 
-    const dist = Math.hypot(dx, dy);
-
-    // força baseada no pullBack REAL
+    // força baseada no recuo real
     const power = Math.min(36, pullBack / 3);
     const impulse = power * 0.32;
-
-    const angle = Math.atan2(dy, dx);
 
     white.vx += Math.cos(angle) * impulse;
     white.vy += Math.sin(angle) * impulse;
 
-    // Inicia movimento da física
     simulationRunning = true;
 
-    // Reseta mira e recuo
+    // desativa mira até as bolas pararem
     aiming = false;
-    pullBack = 0;
 
-    // Animação do taco
+    // reseta recuo
     cueRecoilTarget = Math.min(40, power * 2);
+    pullBack = 0;
 }
 
 /* listeners */
