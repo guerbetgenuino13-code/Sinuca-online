@@ -411,7 +411,8 @@ function drawCueStick(){
 
   // stick length and position (ajustáveis)
   const stickLen = 100 + power * 4;                 // comprimento principal do taco
-  const stickBack = 16 + Math.min(power, 40) * 0.5; // recuo da superfície da bola
+  // original: const stickBack = 16 + Math.min(power,40) * 0.4;
+const stickBack = 16 - cueRecoil + Math.min(power, 40) * 0.4;
 
   // pontos principais do stick (tip fica próximo da bola)
   const tipX = white.x - Math.cos(ang) * (white.r + 6);
@@ -551,6 +552,8 @@ canvas.addEventListener("mouseup", (e) => {
   const impulse = force * 0.95;
   white.vx += Math.cos(angle) * impulse; white.vy += Math.sin(angle) * impulse;
   aiming = false;
+  // dispara recoil visual proporcional à força
+cueRecoilTarget = Math.min(40, Math.round(power * 3)); // ajuste escala (3) se precisar
 });
 canvas.addEventListener("mouseleave", () => { aiming = false; });
 canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
@@ -558,5 +561,6 @@ canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); mouse = getCanva
 canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
 /* ---------- loop ---------- */
-function loop(){ updatePhysics(); draw(); requestAnimationFrame(loop); }
+function loop(){ updatePhysics();cueRecoil += (cueRecoilTarget - cueRecoil) * 0.25; 
+draw(); requestAnimationFrame(loop); }
 loop();
