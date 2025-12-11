@@ -346,7 +346,37 @@ function lighten(hex, frac){
   b = Math.min(255, Math.round(b + (255 - b) * frac));
   return "#" + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
 }
+function isInsidePowerBar(pos) {
+  const bx = powerBar.x;
+  const by = powerBar.y;
+  const bw = powerBar.w;
+  const bh = powerBar.h;
+  return pos.x >= bx && pos.x <= bx + bw && pos.y >= by && pos.y <= by + bh;
+}
 
+function updatePowerFromPos(pos) {
+  const bx = powerBar.x;
+  const bw = powerBar.w;
+  let x = pos.x - bx;
+  x = Math.max(0, Math.min(bw, x));
+  shotPower = Math.round((x / bw) * 36);
+}
+
+function onPowerStart(pos) {
+  if (!isInsidePowerBar(pos)) return false;
+  isAdjustingPower = true;
+  updatePowerFromPos(pos);
+  return true;
+}
+function onPowerMove(pos) {
+  if (!isAdjustingPower) return;
+  updatePowerFromPos(pos);
+}
+function onPowerEnd() {
+  if (!isAdjustingPower) return;
+  isAdjustingPower = false;
+  applyShotWithPower();
+}
 /* ---------- drawing: table / pockets / balls / cue ---------- */
 function drawTable(){
   ctx.fillStyle = "#0c0d10";
