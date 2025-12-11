@@ -1,29 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sinuca Online</title>
-  <style>
-    body {
-      background: #0a0a0a;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding-top: 80px;
-    }
-    h1 {
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-    p {
-      font-size: 18px;
-      opacity: 0.7;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sinuca Online — MVP</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>🎱 Sinuca Online</h1>
-  <p>O site está funcionando! Vamos começar a construir o jogo.</p>
+  <header class="center">
+    <div class="logo">🎱 Sinuca Online</div>
+    <p class="sub">MVP — mesa, mira, tacada, física básica e buracos.</p>
+  </header>
+
+  <main class="center">
+    <div class="table-wrap">
+      <canvas id="gameCanvas" width="900" height="500"></canvas>
+    </div>
+  </main>
+
+  <footer class="center small">Teste em desktop para acessar DevTools. Mobile funciona, mas debugar é mais difícil.</footer>
+
+  <script src="game.js"></script>
 </body>
 </html>
