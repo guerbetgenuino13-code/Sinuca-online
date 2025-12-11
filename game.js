@@ -580,6 +580,7 @@ ctx.font = "13px sans-serif";
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 ctx.fillText("Força: " + shotPower, barX + barW / 2, barY + barH / 2);
+}
 
 function limitAimToBalls(white, targetX, targetY) {
   let closestX = targetX;
