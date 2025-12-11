@@ -216,6 +216,16 @@ function updatePhysics(){
     }
   }
 
+function applyShotUsingRecoil(power, ang) {
+  const white = balls[0];
+  const impulse = power * 0.35; // ajuste de escala da força
+
+  white.vx += Math.cos(ang) * impulse;
+  white.vy += Math.sin(ang) * impulse;
+
+  simulationRunning = true;
+}
+
   // colisões bola-bola
   for(let i=0;i<balls.length;i++){
     for(let j=i+1;j<balls.length;j++){
