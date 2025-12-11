@@ -26,7 +26,7 @@ let isAdjustingPower = false; // true enquanto arrasta a barra
 // configurações da barra (tamanho/posição em px — ajuste se quiser)
 const powerBar = {
   x: 40,
-  y: null,   // vamos calcular dinamicamente como H/2 - barH/2 (no draw)
+  y: 0,   // vamos calcular dinamicamente como H/2 - barH/2 (no draw)
   w: 200,
   h: 20
 };
@@ -58,26 +58,29 @@ function toCanvasCoords(clientX, clientY) {
 
 /* ---------- pointer handlers (pointer API cobre mouse + touch) ---------- */
 function onPointerDown(e) {
-    if (!areBallsStopped()) return;
 
     const pos = (e.touches && e.touches[0])
         ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
         : toCanvasCoords(e.clientX, e.clientY);
 
+    mouse = pos;
+
     const white = balls[0];
     const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
-    // Jogador tocou na área útil da mira
-    if (dist <= white.r + 140) {
+    // ✔ Se bolas estão paradas → mira sempre ativa automaticamente
+    if (areBallsStopped()) {
         aiming = true;
+    }
+
+    // ✔ Jogador tocou na área útil da mira
+    if (dist <= white.r + 140) {
         isDragging = true;
-        mouse = pos;
         pullBack = 0;
         return;
     }
 
-    // Tocou fora → NÃO desligar mira se o jogo está parado
-    // (mantém mira livre automaticamente)
+    // ✔ Tocou fora — só desliga mira se bolas estiverem em movimento
     if (!areBallsStopped()) {
         aiming = false;
         isDragging = false;
@@ -85,7 +88,7 @@ function onPointerDown(e) {
 }
 
 function onPointerMove(e) {
-    if (!aiming) return; // permite ajustar recuo mesmo sem "arrastar"
+    if (!aiming) return;  // pode mover mira sempre que mira estiver ativa
 
     const pos = (e.touches && e.touches[0])
         ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
@@ -95,10 +98,10 @@ function onPointerMove(e) {
 
     const white = balls[0];
 
-    // ângulo da mira
+    // direção da mira
     const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
 
-    // ✔ PONTO CORRETO da ponta do taco (MESMO que drawCueStick usa!)
+    // ✔ ponta do taco — mesmo ponto usado no drawCueStick
     const tipX = white.x - Math.cos(ang) * (white.r + 4);
     const tipY = white.y - Math.sin(ang) * (white.r + 4);
 
@@ -106,12 +109,15 @@ function onPointerMove(e) {
     const vx = mouse.x - tipX;
     const vy = mouse.y - tipY;
 
-    // componente na direção oposta ao taco (recuo)
+    // componente na direção oposta ao taco
     const distBack = vx * -Math.cos(ang) + vy * -Math.sin(ang);
 
     const maxPullBack = 120;
 
     pullBack = Math.max(0, Math.min(maxPullBack, distBack));
+
+    // ✔ atualiza força usada pela barra lateral
+    shotPower = Math.round(Math.min(36, pullBack / 3));
 }
 
 function onPointerUp(e) {
@@ -127,8 +133,8 @@ function onPointerUp(e) {
     const dy = mouse.y - white.y;
     const angle = Math.atan2(dy, dx);
 
-    // força baseada no recuo real
-    const power = Math.min(36, pullBack / 3);
+    // força baseada no shotPower da barra lateral
+    const power = shotPower;
     const impulse = power * 0.32;
 
     white.vx += Math.cos(angle) * impulse;
@@ -136,12 +142,15 @@ function onPointerUp(e) {
 
     simulationRunning = true;
 
-    // desativa mira até as bolas pararem
+    // desativa mira até bolas pararem
     aiming = false;
 
-    // reseta recuo
+    // animação do taco voltando
     cueRecoilTarget = Math.min(40, power * 2);
+
+    // reseta
     pullBack = 0;
+    shotPower = 0;  // zera barra
 }
 
 /* listeners */
