@@ -217,14 +217,25 @@ function updatePhysics(){
     if(b.y > bottom){ b.y = bottom; b.vy *= -1; }
 
     // pockets: usar mouthPositions (alinha visual + físico)
-    for(const m of mouthPositions){
-      const innerR = table.pocketRadius - 8;
-      const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
-      if(d < innerR){
-        b.vx = 0; b.vy = 0; b.pocketed = true; b.x = -1000; b.y = -1000;
+  for (const m of mouthPositions) {
+    // raio efetivo da caçapa
+    const innerR = table.pocketRadius + b.r * 0.4;
+
+    // distância da bola até o centro da caçapa
+    const d = Math.hypot(b.x - m.x, b.y - m.y);
+
+    if (d < innerR) {
+        b.pocketed = true;
+        b.vx = 0;
+        b.vy = 0;
+
+        // opcional: joga a bola "para dentro" (fora da mesa)
+        b.x = -100;
+        b.y = -100;
+
         break;
-      }
     }
+   }
   }
 
   // colisões bola-bola
