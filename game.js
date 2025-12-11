@@ -57,8 +57,8 @@ const table = {
   pocketRadius
 };
 
-const cx = table.x + table.width / 2;
-const cy = table.y + table.height / 2;
+let cx = table.x + table.width / 2;
+let cy = table.y + table.height / 2;
 
 // --- Ajuste de resolução (corrige barra preta do taco) ---
 function resizeCanvasToDPR() {
