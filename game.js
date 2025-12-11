@@ -36,6 +36,88 @@ function isInsideCueArea(p) {
   );
 }
 
+/* ---------- LISTENERS DO TACO LATERAL ---------- */
+
+canvas.addEventListener("mousedown", (e) => {
+  const p = getCanvasPos(e);
+
+  // Se clicar dentro da área lateral → começa ajuste de força
+  if (isInsideCueArea(p)) {
+    draggingCue = true;
+    startY = p.y;
+    simulationRunning = false;
+    return; // não habilita mira no feltro
+  }
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  const p = getCanvasPos(e);
+
+  if (draggingCue) {
+    const dy = startY - p.y; // arrastar para cima → mais força
+    power = clamp(Math.round(dy / 4), 0, 36);
+    return;
+  }
+
+  // Caso contrário: comportamento normal da mira
+  mouse = p;
+});
+
+canvas.addEventListener("mouseup", (e) => {
+  const p = getCanvasPos(e);
+
+  if (draggingCue) {
+    draggingCue = false;
+
+    // evita tacar com bola em movimento
+    if (!areBallsStopped()) return;
+
+    // aplica tacada usando força do taco lateral
+    applyShotUsingPower(power);
+    power = 0;
+    return;
+  }
+});
+
+// MOBILE → TOUCH
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const p = getCanvasPos(e);
+
+  if (isInsideCueArea(p)) {
+    draggingCue = true;
+    startY = p.y;
+    simulationRunning = false;
+    return;
+  }
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  const p = getCanvasPos(e);
+
+  if (draggingCue) {
+    const dy = startY - p.y;
+    power = clamp(Math.round(dy / 4), 0, 36);
+    return;
+  }
+
+  mouse = p;
+});
+
+canvas.addEventListener("touchend", (e) => {
+  e.preventDefault();
+
+  if (draggingCue) {
+    draggingCue = false;
+
+    if (!areBallsStopped()) return;
+
+    applyShotUsingPower(power);
+    power = 0;
+  }
+});
+
 const table = {
   x: railOuter,
   y: railOuter,
