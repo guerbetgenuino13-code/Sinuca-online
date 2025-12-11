@@ -319,9 +319,9 @@ function drawPocketByMouth(m){
   ctx.fill();
 
   // calcular ângulo a partir da direção (aponta para o centro)
-  const dx = m.dirX || 0;
-  const dy = m.dirY || 1;
-  const angle = Math.atan2(dy, dx) + Math.PI/2; // rotate para alinhar meia-lua
+  const dxm = p.x - white.x;
+const dym = p.y - white.y;
+const angle = Math.atan2(dym, dxm);
 
   // 1) cavidade meia-lua (rotacionada)
   ctx.save();
@@ -561,8 +561,9 @@ function draw(){
     const white = balls[0];
     ctx.beginPath(); ctx.moveTo(white.x, white.y); ctx.lineTo(mouse.x, mouse.y);
     ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2; ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
-    const dxm = white.x - mouse.x, dym = white.y - mouse.y;
-    const power = clamp(Math.hypot(dxm,dym) / 6, 0, 36);
+ const dxm = mouse.x - white.x;
+const dym = mouse.y - white.y;
+const power = clamp(Math.hypot(dxm, dym) / 6, 0, 36);
     ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.font = "12px sans-serif"; ctx.fillText("Força: " + Math.round(power), white.x + 12, white.y - 12);
   }
 }
