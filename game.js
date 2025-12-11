@@ -615,43 +615,27 @@ function drawCueStick(){
 // ============================================
 // BLOCO 2 — FUNÇÃO DE APLICAR A TACADA
 // ============================================
-function applyShot() {
-  const white = balls && balls[0];
-  if (!white || !mouse) return 0;
+function applyShotUsingPower(forceValue) {
+  const white = balls[0];
+  if (!white) return;
 
-  // --- PROTEÇÃO: não permita tacar se as bolas ainda estiverem em movimento ---
-  if (!areBallsStopped()) {
-    // opcional: mostrar no console para debug
-    console.warn("applyShot: tacada ignorada porque as bolas ainda estão em movimento.");
-    return 0;
-  }
+  // direção da mira – NÃO depende do taco lateral
+  const dx = aimPoint.x - white.x;
+  const dy = aimPoint.y - white.y;
 
-  // usa o MESMO cálculo da mira para garantir direção correta
-  const dx = mouse.x - white.x;
-  const dy = mouse.y - white.y;
   const ang = Math.atan2(dy, dx);
 
-  const dist = Math.hypot(dx, dy);
-  const rawPower = clamp(dist / 6, 0, 36);
-  const power = Math.round(rawPower);
-  const impulse = power * 0.32;
-
-  // LOG para depurar direção/valores no momento da tacada
-  console.log("applyShot -> mouse:", Math.round(mouse.x), Math.round(mouse.y),
-              "white:", Math.round(white.x), Math.round(white.y),
-              "dx,dy:", dx.toFixed(2), dy.toFixed(2),
-              "ang(deg):", (ang * 180/Math.PI).toFixed(1),
-              "power:", power, "impulse:", impulse.toFixed(2));
+  // impulso baseado SOMENTE na força do taco lateral
+  const impulse = forceValue * 0.32;
 
   white.vx += Math.cos(ang) * impulse;
   white.vy += Math.sin(ang) * impulse;
 
-  // dispara recoil visual proporcional à força
-  cueRecoilTarget = Math.min(40, Math.round(power * 3));
-
+  // ativa física
   simulationRunning = true;
 
-  return power;
+  // efeito de recoil (mantém o taco animado atrás da bola)
+  cueRecoilTarget = Math.min(40, Math.round(forceValue * 3));
 }
 // ---------- taco (cue stick) ----------
 function drawSideCue() {
