@@ -65,6 +65,16 @@ function onPointerDown(e) {
   }
 }
 
+function onPointerMove(e) {
+  if (!aiming || !isDragging) return;
+
+  const pos = (e.touches && e.touches[0])
+    ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
+    : toCanvasCoords(e.clientX, e.clientY);
+
+  mouse = pos;
+}
+
 function onPointerUp(e) {
   if (!aiming) return;   // << ESSA LINHA IMPEDE TACADA INDESEJADA
 
