@@ -318,10 +318,11 @@ function drawPocketByMouth(m){
   ctx.arc(mouthX, mouthY, innerR + 14, 0, Math.PI*2);
   ctx.fill();
 
-  // calcular ângulo a partir da direção (aponta para o centro)
-  const dxm = p.x - white.x;
-const dym = p.y - white.y;
-const angle = Math.atan2(dym, dxm);
+  // usar a direção já calculada em m.dirX / m.dirY
+  const dx = m.dirX || 0;
+  const dy = m.dirY || 1;
+  // angulo para rotacionar a "meia-lua" de entrada (soma PI/2 para alinhar visualmente)
+  const angle = Math.atan2(dy, dx) + Math.PI/2;
 
   // 1) cavidade meia-lua (rotacionada)
   ctx.save();
@@ -329,7 +330,7 @@ const angle = Math.atan2(dym, dxm);
   ctx.rotate(angle);
   ctx.beginPath();
   ctx.fillStyle = pocketColor;
-  ctx.ellipse(0, 0, innerR, innerR*0.62, 0, Math.PI, 2*Math.PI);
+  ctx.ellipse(0, 0, innerR, innerR * 0.62, 0, Math.PI, 2 * Math.PI);
   ctx.fill();
   ctx.restore();
 
@@ -337,17 +338,17 @@ const angle = Math.atan2(dym, dxm);
   const lipShift = innerR * 0.26;
   const lipX = mouthX - dx * lipShift;
   const lipY = mouthY - dy * lipShift;
-  ctx.beginPath();
   ctx.save();
   ctx.translate(lipX, lipY);
   ctx.rotate(angle);
+  ctx.beginPath();
   ctx.ellipse(0, 0, innerR * 0.92, innerR * 0.28, 0, 0, Math.PI*2);
   ctx.fillStyle = shadeHex(feltCenter, -8);
   ctx.fill();
   ctx.restore();
 
   // 3) profundidade interna (degradê rotacionado também)
-  const grad = ctx.createRadialGradient(mouthX, mouthY + innerR*0.12, innerR*0.08, mouthX, mouthY + innerR*0.12, innerR*0.95);
+  const grad = ctx.createRadialGradient(mouthX, mouthY + innerR * 0.12, innerR * 0.08, mouthX, mouthY + innerR * 0.12, innerR * 0.95);
   grad.addColorStop(0, "rgba(40,16,16,0.95)");
   grad.addColorStop(0.5, "rgba(24,6,6,0.9)");
   grad.addColorStop(1, "rgba(0,0,0,0.85)");
@@ -364,12 +365,12 @@ const angle = Math.atan2(dym, dxm);
   // 4) pequeno destaque na borda superior do lábio
   const highlightShiftX = mouthX - dx * (innerR * 0.18);
   const highlightShiftY = mouthY - dy * (innerR * 0.18);
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(255,255,255,0.04)";
-  ctx.lineWidth = 1;
   ctx.save();
   ctx.translate(highlightShiftX, highlightShiftY);
   ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,0.04)";
+  ctx.lineWidth = 1;
   ctx.ellipse(0, 0, innerR * 0.8, innerR * 0.26, 0, 0, Math.PI*2);
   ctx.stroke();
   ctx.restore();
