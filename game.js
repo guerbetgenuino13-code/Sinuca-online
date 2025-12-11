@@ -290,9 +290,14 @@ function areBallsStopped() {
 }
 function checkAllBallsStoppedAndReactivate() {
   if (!simulationRunning) return;
+
   if (areBallsStopped()) {
     simulationRunning = false;
+
+    // ativa mira automaticamente
     aiming = true;
+    isDragging = false;
+    pullBack = 0;
     cueRecoil = 0;
   }
 }
