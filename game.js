@@ -491,6 +491,36 @@ function drawCueStick(){
   ctx.textBaseline = "middle";
   ctx.fillText(power.toString(), bx + barW/2, by + barH/2);
 }
+// ---------- taco (cue stick) ----------
+function drawCueStick(){
+    if(!aiming) return;  // só mostra o taco enquanto mira
+
+    const white = balls[0];  // bola branca
+
+    const dx = mouse.x - white.x;
+    const dy = mouse.y - white.y;
+
+    const angle = Math.atan2(dy, dx);
+
+    const dist = 150;        // comprimento do taco
+    const back = -40;        // recuo para trás da bola
+
+    const x1 = white.x + Math.cos(angle) * back;
+    const y1 = white.y + Math.sin(angle) * back;
+
+    const x2 = white.x + Math.cos(angle) * dist;
+    const y2 = white.y + Math.sin(angle) * dist;
+
+    ctx.strokeStyle = "#c79c47";   // cor dourada/madeira
+    ctx.lineWidth = 6;             // espessura
+
+    ctx.lineCap = "round";
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+}
 /* ---------- draw loop ---------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
