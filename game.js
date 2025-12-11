@@ -257,7 +257,28 @@ function updatePhysics(){
     }
   }
 }
+// =======================================================
+// BLOCO 3 — VERIFICA SE BOLAS PARARAM + REATIVA A MIRA
+// =======================================================
+function areBallsStopped() {
+  if (!balls || balls.length === 0) return true;
+  for (let i = 0; i < balls.length; i++) {
+    const b = balls[i];
+    const speed = Math.hypot(b.vx || 0, b.vy || 0);
+    if (speed > 0.03) return false;
+  }
+  return true;
+}
 
+function checkAllBallsStoppedAndReactivate() {
+  if (!simulationRunning) return;
+
+  if (areBallsStopped()) {
+    simulationRunning = false;
+    aiming = true;
+    cueRecoil = 0;
+  }
+}
 /* ---------- helpers ---------- */
 function roundRect(ctx, x, y, w, h, r){
   ctx.beginPath();
