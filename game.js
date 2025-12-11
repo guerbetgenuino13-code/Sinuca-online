@@ -1,12 +1,8 @@
-/* Sinuca Online — MVP physics (client-side)
-   - Mesa com pockets
-   - Múltiplas bolas (array)
-   - Mira com arrastar/soltar
-   - Tacada (força baseada na distância)
-   - Atrito e colisões elásticas simples
+/* game.js — Atualizado: adiciona 15 bolas (triângulo completo) com números
+   Mantém: mesa, pockets, mira, tacada, física básica, colisões elásticas.
 */
 
-console.log("game.js carregado");
+console.log("game.js (15 bolas) carregado");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -36,45 +32,71 @@ const pockets = [
 ];
 
 // Bola template
-function createBall(x, y, radius=10, color="white", id=0){
-  return {x, y, vx:0, vy:0, r: radius, color, id, mass: radius};
+function createBall(x, y, radius=10, color="#fff", id=0, number=null){
+  return {x, y, vx:0, vy:0, r: radius, color, id, mass: radius, number, pocketed:false};
 }
 
-// Inicializa bolas: branca + algumas coloridas
+// Array de bolas
 const balls = [];
-// bola branca
-balls.push(createBall(table.x + table.width*0.25, table.y + table.height/2, 10, "#ffffff", 0));
 
-// tri de exemplo (7 bolas) — posição simples
-const startX = table.x + table.width*0.65;
-const startY = table.y + table.height/2;
-let idCounter = 1;
-const triOffsets = [
-  [0,0],
-  [22, -12],
-  [22, 12],
-  [44, -24],
-  [44, 0],
-  [44, 24],
-  [66, -36],
-  [66, -12],
-  [66, 12],
-  [66, 36]
+// branca (id 0)
+balls.push(createBall(table.x + table.width*0.25, table.y + table.height/2, 10, "#ffffff", 0, 0));
+
+// Cores e design aproximado das bolas 1..15
+// Para simplicidade: usamos cor sólida para todas; desenhamos número central.
+// Você pode ajustar cores abaixo se quiser bolas lisas/rajadas distintas.
+const ballDefs = [
+  {num:1,  color:"#FFD700"}, // amarelo (1)
+  {num:2,  color:"#00008B"}, // azul escuro (2)
+  {num:3,  color:"#FF4500"}, // vermelho (3)
+  {num:4,  color:"#800080"}, // roxo (4)
+  {num:5,  color:"#FF8C00"}, // laranja (5)
+  {num:6,  color:"#8B4513"}, // marrom (6)
+  {num:7,  color:"#006400"}, // verde escuro (7)
+  {num:8,  color:"#000000"}, // preta (8)
+  {num:9,  color:"#FFFF99"}, // 9 (amarelo claro / stripe)
+  {num:10, color:"#ADD8E6"}, // 10 (azul claro / stripe)
+  {num:11, color:"#FFA07A"}, // 11 (salmon / stripe)
+  {num:12, color:"#DDA0DD"}, // 12 (plum / stripe)
+  {num:13, color:"#FFDAB9"}, // 13 (peach / stripe)
+  {num:14, color:"#A52A2A"}, // 14 (brown-ish / stripe)
+  {num:15, color:"#90EE90"}  // 15 (light green / stripe)
 ];
-const palette = ["#f44336","#ff9800","#ffeb3b","#2196f3","#9c27b0","#795548","#4caf50","#00bcd4","#e91e63","#ffc107"];
-for(let i=0;i<7;i++){
-  const off = triOffsets[i];
-  balls.push(createBall(startX + off[0], startY + off[1], 10, palette[i%palette.length], ++idCounter));
+
+// Geração do triângulo de 15 bolas (linhas 5,4,3,2,1)
+const r = 10;                 // raio bola
+const spacing = r*2 + 2;      // distância entre centros
+const startX = table.x + table.width*0.65;  // posição do "ponta" do tri (aprox)
+const startY = table.y + table.height/2;
+
+let idCounter = 1; // já usamos id 0 pra branca
+let idx = 0;
+
+for(let row = 0; row < 5; row++){
+  // cada row tem (5 - row) ou, mais fácil: construir com 5 rows: rowSize = row+1? (vamos fazer 5,4,3,2,1)
+  // vamos construir invertido: rowsSizes = [5,4,3,2,1]
+  const rowsSizes = [5,4,3,2,1];
+  const rowSize = rowsSizes[row];
+  // x offset depende da row (avança para direita conforme row aumenta)
+  const x = startX + row * (spacing * 0.87); // 0.87 aproxima o acomodo triangular
+  // centramos verticalmente: para cada coluna calcular y com deslocamento para centralizar o tri
+  const totalHeight = (rowSize - 1) * spacing;
+  for(let col = 0; col < rowSize; col++){
+    const y = startY - totalHeight/2 + col * spacing;
+    const def = ballDefs[idx % ballDefs.length];
+    balls.push(createBall(x, y, r, def.color, ++idCounter, def.num));
+    idx++;
+    if(idx >= 15) break;
+  }
+  if(idx >= 15) break;
 }
 
 // Física
 const friction = 0.992;     // taxa de redução por frame
-const pocketKillSpeed = 0.6; // se bola entra no pocket, remove sem bounce
 
 // Controle de mira
 let aiming = false;
 let mouse = {x:0,y:0};
-let aimStart = {x:0,y:0};
 
 // Utilidades
 function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
@@ -84,6 +106,7 @@ function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 function updatePhysics(){
   // mover bolas
   for(let b of balls){
+    if(b.pocketed) continue;
     b.x += b.vx;
     b.y += b.vy;
 
@@ -110,12 +133,11 @@ function updatePhysics(){
     for(const p of pockets){
       const d = Math.hypot(b.x - p.x, b.y - p.y);
       if(d < table.pocketRadius){
-        // joga fora (simples): move para fora do jogo com animação simples
         b.vx = 0;
         b.vy = 0;
-        b.x = -1000; // fora da tela
-        b.y = -1000;
         b.pocketed = true;
+        b.x = -1000;
+        b.y = -1000;
       }
     }
   }
@@ -167,7 +189,7 @@ function updatePhysics(){
   }
 }
 
-// Desenho mesa, pockets e bolas
+// Desenho mesa, pockets e bolas (com número)
 function draw(){
   // fundo
   ctx.clearRect(0,0,W,H);
@@ -191,13 +213,14 @@ function draw(){
   // bolas
   for(const b of balls){
     if(b.pocketed) continue;
+
     // sombra
     ctx.beginPath();
     ctx.fillStyle = "rgba(0,0,0,0.18)";
     ctx.ellipse(b.x + 3, b.y + 5, b.r * 0.9, b.r * 0.5, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // bola
+    // bola (cor)
     ctx.beginPath();
     ctx.fillStyle = b.color;
     ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
@@ -207,11 +230,34 @@ function draw(){
     ctx.strokeStyle = "rgba(0,0,0,0.4)";
     ctx.lineWidth = 1;
     ctx.stroke();
+
+    // número da bola (se >0)
+    if(b.number && b.number > 0){
+      ctx.fillStyle = (b.color === "#000000") ? "#fff" : "#fff";
+      ctx.font = "10px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(b.number.toString(), b.x, b.y);
+    } else if(b.number === 0){
+      // branca: desenha pequeno contorno
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(0,0,0,0.2)";
+      ctx.lineWidth = 1;
+      ctx.arc(b.x, b.y, b.r-1.4, 0, Math.PI*2);
+      ctx.stroke();
+    }
   }
+
+  // HUD simples: bolas restantes
+  const remaining = balls.filter(b => b.number > 0 && !b.pocketed).length;
+  ctx.fillStyle = "#fff";
+  ctx.font = "14px sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Bolas restantes: " + remaining, 16, H - 14);
 
   // se aiming, desenhar linha de mira
   if(aiming){
-    const white = balls[0]; // bola branca index 0
+    const white = balls[0];
     ctx.beginPath();
     ctx.moveTo(white.x, white.y);
     ctx.lineTo(mouse.x, mouse.y);
@@ -220,7 +266,7 @@ function draw(){
     ctx.setLineDash([6,6]);
     ctx.stroke();
     ctx.setLineDash([]);
-    // - força visual
+
     const dx = white.x - mouse.x;
     const dy = white.y - mouse.y;
     const power = clamp(Math.hypot(dx,dy) / 6, 0, 30);
@@ -246,7 +292,6 @@ canvas.addEventListener("mousedown", (e) => {
   // só começar mira se clicar perto da branca
   if(d <= white.r + 40){
     aiming = true;
-    aimStart = {x: white.x, y: white.y};
   }
   mouse = p;
 });
