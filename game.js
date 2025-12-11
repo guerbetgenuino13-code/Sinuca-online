@@ -1,3 +1,16 @@
+window.onerror = (msg, src, line, col, err) => {
+  const div = document.createElement("div");
+  div.style.position = "fixed";
+  div.style.top = "0";
+  div.style.left = "0";
+  div.style.zIndex = "999999";
+  div.style.background = "red";
+  div.style.color = "white";
+  div.style.padding = "10px";
+  div.style.fontSize = "16px";
+  div.innerText = "ERRO: " + msg + "\n" + src + ":" + line;
+  document.body.appendChild(div);
+};
 /* ---------- canvas ---------- */
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
