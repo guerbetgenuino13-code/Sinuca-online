@@ -622,6 +622,53 @@ function limitAimToBorders(white, targetX, targetY) {
   return {x: clampedX, y: clampedY};
 }
 
+function limitAimToBorders(white, targetX, targetY) {
+  const left = table.x;
+  const right = table.x + table.width;
+  const top = table.y;
+  const bottom = table.y + table.height;
+
+  return {
+    x: Math.max(left, Math.min(right, targetX)),
+    y: Math.max(top, Math.min(bottom, targetY))
+  };
+}
+
+function limitAimToBalls(white, targetX, targetY) {
+  let closestX = targetX;
+  let closestY = targetY;
+  let minT = Infinity;
+
+  for (const b of balls) {
+    if (b === white || b.pocketed) continue;
+
+    const A = { x: white.x, y: white.y };
+    const B = { x: targetX, y: targetY };
+    const C = { x: b.x, y: b.y };
+
+    const dx = B.x - A.x;
+    const dy = B.y - A.y;
+    const denom = dx*dx + dy*dy;
+    if (denom === 0) continue;
+
+    const t = ((C.x - A.x)*dx + (C.y - A.y)*dy) / denom;
+    if (t < 0 || t > 1) continue;
+
+    const Px = A.x + t * dx;
+    const Py = A.y + t * dy;
+    const dist = Math.hypot(Px - C.x, Py - C.y);
+
+    // margem pequena (4px) para contar como bloqueio
+    if (dist <= b.r + 4 && t < minT) {
+      minT = t;
+      closestX = Px;
+      closestY = Py;
+    }
+  }
+
+  return { x: closestX, y: closestY };
+}
+
 /* ---------- draw loop ---------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
