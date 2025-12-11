@@ -581,9 +581,9 @@ const stickRecoil = (isAdjustingPower ? 0 : pullBack) + cueRecoil;
 
     function drawPowerBar() {
     const barX = powerBar.x;
-    const barY = H / 2 - powerBar.h / 2;
-    const barW = powerBar.w;
-    const barH = powerBar.h;
+const barY = H / 2 - powerBar.h / 2;  // ← SOMENTE calcula, não atribui
+const barW = powerBar.w;
+const barH = powerBar.h;
 
     // fundo externo
     ctx.beginPath();
