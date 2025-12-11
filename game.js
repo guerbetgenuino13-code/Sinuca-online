@@ -580,18 +580,20 @@ function getCanvasPos(e){
 }
 
 // mouse/touch handlers (unificados, simples)
+// ========== NOVO SISTEMA CORRETO DE INPUT ==========
+
 canvas.addEventListener("mousedown", (e) => {
-  const p = getCanvasPos(e);
-  const white = balls[0];
-  const d = Math.hypot(p.x - white.x, p.y - white.y);
-  if(d <= white.r + 36) aiming = true;
-  mouse = p;
+  aiming = true;
+  mouse = getCanvasPos(e);
 });
-canvas.addEventListener("mousemove", (e) => { mouse = getCanvasPos(e); });
+
+canvas.addEventListener("mousemove", (e) => {
+  if (aiming) mouse = getCanvasPos(e);
+});
+
 canvas.addEventListener("mouseup", (e) => {
-  if(!aiming) return;
-  const p = getCanvasPos(e); mouse = p;
-  // aplica tacada usando applyShot (que calcula power + recoil)
+  if (!aiming) return;
+  mouse = getCanvasPos(e);
   applyShot();
   aiming = false;
 });
