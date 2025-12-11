@@ -18,6 +18,24 @@ const pocketRadius = 26;
 let cueRecoil = 0;        // animação do recuo atual
 let cueRecoilTarget = 0;  // alvo de recuo quando o jogador tacar
 let simulationRunning = false; // controla se a simulação de física está ativa
+
+let aimPoint = { x: 0, y: 0 };
+let power = 0;
+let draggingCue = false;
+let startY = 0;
+
+const cueArea = { x: W - 120, y: 0, width: 120, height: H };
+
+// ---------- Função auxiliar para saber se o toque está no painel lateral ----------
+function isInsideCueArea(p) {
+  return (
+    p.x >= cueArea.x &&
+    p.x <= cueArea.x + cueArea.width &&
+    p.y >= cueArea.y &&
+    p.y <= cueArea.y + cueArea.height
+  );
+}
+
 const table = {
   x: railOuter,
   y: railOuter,
