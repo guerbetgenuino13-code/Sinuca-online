@@ -102,24 +102,39 @@ function onPointerMove(e) {
 }
 
 function onPointerUp(e) {
-  if (!aiming) return;
+    // Só pode tacar se estava arrastando para trás
+    if (!isDragging) return;
 
-  isDragging = false;
+    isDragging = false;
 
-  const white = balls[0];
-  const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
+    // Se não estava mirando, não faz nada
+    if (!aiming) return;
 
-  // força baseada no recuo
-  const power = pullBack / 2; // ajuste sensibilidade: maior divisor = força menor
+    // --- CALCULA A TACADA ---
+    const white = balls[0];
+    const dx = mouse.x - white.x;
+    const dy = mouse.y - white.y;
 
-  if (power > 0.5) { // só dispara se houver recuo significativo
-    applyShotUsingRecoil(power, ang);
-    // recuo visual do stick (mantemos o cueRecoilTarget para animação)
-    cueRecoilTarget = Math.min(40, Math.round(power * 2.2));
-  }
+    const dist = Math.hypot(dx, dy);
 
-  pullBack = 0;
-  aiming = false;
+    // força baseada no pullBack REAL
+    const power = Math.min(36, pullBack / 3);
+    const impulse = power * 0.32;
+
+    const angle = Math.atan2(dy, dx);
+
+    white.vx += Math.cos(angle) * impulse;
+    white.vy += Math.sin(angle) * impulse;
+
+    // Inicia movimento da física
+    simulationRunning = true;
+
+    // Reseta mira e recuo
+    aiming = false;
+    pullBack = 0;
+
+    // Animação do taco
+    cueRecoilTarget = Math.min(40, power * 2);
 }
 
 /* listeners */
