@@ -576,27 +576,6 @@ const buttY = tipY - Math.sin(ang) * (stickRecoil + stickLen);
   ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
 
-/* ---------- shot application (usada por pointerup) ---------- */
-function applyShot() {
-  const white = balls && balls[0];
-  if (!white || !mouse) return;
-
-  const dx = mouse.x - white.x;
-  const dy = mouse.y - white.y;
-  const ang = Math.atan2(dy, dx);
-
-  const dist = Math.hypot(dx, dy);
-  const rawPower = clamp(dist / 6, 0, 36);
-  const power = Math.round(rawPower);
-
-  const impulse = power * 0.32; // escala consistente
-
-  white.vx += Math.cos(ang) * impulse;
-  white.vy += Math.sin(ang) * impulse;
-
-  simulationRunning = true;
-}
-
 function limitAimToBalls(white, targetX, targetY) {
   let closestX = targetX;
   let closestY = targetY;
