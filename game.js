@@ -14,7 +14,11 @@ const railOuter = 28;
 const railInner = 12;
 const pocketRadius = 26;
 
+// ---------- cue recoil / animação globals ----------
+let cueRecoil = 0;        // animação do recuo atual
+let cueRecoilTarget = 0;  // alvo de recuo quando o jogador tacar
 const table = {
+  
   x: railOuter,
   y: railOuter,
   width: W - railOuter * 2,
@@ -388,12 +392,16 @@ function drawPolishedBall(b){
   }
 }
 /* ---------- draw cue stick + power indicator ---------- */
+/* ---------- draw cue stick + power indicator (com recoil) ---------- */
 function drawCueStick(){
-// if(!aiming) return;
-  const white = balls[0];
-  // direção da tacada (da bola para o mouse)
-  const dx = mouse.x - white.x;
-  const dy = mouse.y - white.y;
+  // só desenha enquanto mirando (comente temporariamente para debug)
+  if(!aiming) return;
+  const white = balls && balls[0];
+  if(!white) return;
+
+  // direção e distância entre bola e mouse/touch
+  const dx = (mouse && typeof mouse.x === "number") ? mouse.x - white.x : 1;
+  const dy = (mouse && typeof mouse.y === "number") ? mouse.y - white.y : 0;
   const ang = Math.atan2(dy, dx);
 
   // força atual (mesma lógica do cálculo de impulso)
@@ -401,30 +409,32 @@ function drawCueStick(){
   const rawPower = clamp(dist / 6, 0, 36);
   const power = Math.round(rawPower);
 
-  // stick length and position: fica POR TRÁS da bola, proporcional à força
-  const stickLen = 120 + power * 3; // ajuste visual: 120px base
-  const stickBack = 18 + Math.min(power, 40) * 0.4; // distância da superfície da bola
+  // stick length and position (ajustáveis)
+  const stickLen = 100 + power * 4;                 // comprimento principal do taco
+  const stickBack = 16 + Math.min(power, 40) * 0.5; // recuo da superfície da bola
 
-  // stick endpoints (em coordenadas)
-  const tipX = white.x - Math.cos(ang) * (white.r + 6); // ponta encostando na bola (pequeno offset)
+  // pontos principais do stick (tip fica próximo da bola)
+  const tipX = white.x - Math.cos(ang) * (white.r + 6);
   const tipY = white.y - Math.sin(ang) * (white.r + 6);
-  const buttX = tipX - Math.cos(ang) * stickLen;
-  const buttY = tipY - Math.sin(ang) * stickLen;
 
-  // desenha sombra do stick
+  // aplicar recoil ao comprimento do stick para dar impacto visual
+  const buttX = tipX - Math.cos(ang) * (stickLen + cueRecoil);
+  const buttY = tipY - Math.sin(ang) * (stickLen + cueRecoil);
+
+  // sombra do stick
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(0,0,0,0.35)";
-  ctx.lineWidth = 10;
+  ctx.strokeStyle = "rgba(0,0,0,0.45)";
+  ctx.lineWidth = 11;
   ctx.lineCap = "round";
-  ctx.moveTo(buttX+2, buttY+4);
-  ctx.lineTo(tipX+2, tipY+4);
+  ctx.moveTo(buttX + 2, buttY + 4);
+  ctx.lineTo(tipX + 2, tipY + 4);
   ctx.stroke();
 
-  // desenha corpo do stick (gradiente madeira -> ponta escura)
+  // corpo do stick - gradiente madeira -> ponta escura
   const g = ctx.createLinearGradient(buttX, buttY, tipX, tipY);
-  g.addColorStop(0, "#8B5A2B"); // madeira clara
-  g.addColorStop(0.6, "#5a3518"); // madeira escura
-  g.addColorStop(1, "#222"); // ponta
+  g.addColorStop(0, "#8B5A2B");
+  g.addColorStop(0.6, "#5a3518");
+  g.addColorStop(1, "#222");
   ctx.beginPath();
   ctx.strokeStyle = g;
   ctx.lineWidth = 8;
@@ -433,17 +443,17 @@ function drawCueStick(){
   ctx.lineTo(tipX, tipY);
   ctx.stroke();
 
-  // detalhe metal near butt (wrap)
+  // detalhe de brilho próximo ao butt
   const wrapX = buttX + (tipX - buttX) * 0.12;
   const wrapY = buttY + (tipY - buttY) * 0.12;
   ctx.beginPath();
   ctx.strokeStyle = "rgba(200,200,200,0.18)";
   ctx.lineWidth = 6;
   ctx.moveTo(wrapX, wrapY);
-  ctx.lineTo(wrapX + Math.cos(ang + Math.PI/2)*3, wrapY + Math.sin(ang + Math.PI/2)*3);
+  ctx.lineTo(wrapX + Math.cos(ang + Math.PI/2) * 3, wrapY + Math.sin(ang + Math.PI/2) * 3);
   ctx.stroke();
 
-  // ponta do stick (cola/ponta)
+  // ponta do stick (detalhe)
   const cueTipX = tipX + Math.cos(ang) * 6;
   const cueTipY = tipY + Math.sin(ang) * 6;
   ctx.beginPath();
@@ -451,20 +461,18 @@ function drawCueStick(){
   ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI*2);
   ctx.fill();
 
-  // indicador de força — barra fixa próxima ao branco (acima/à direita)
+  // ---------- indicador de força (barra) ----------
   const barW = 90, barH = 8;
-  const pad = 16;
-  let bx = white.x + 24;
-  let by = white.y - 34;
-
-  // mantém indicador dentro do canvas
-  if(bx + barW > W - 8) bx = W - barW - 12;
+  let bx = white.x + 28;
+  let by = white.y - 36;
+  // evita sair da tela
+  if(bx + barW > W - 12) bx = W - barW - 16;
   if(by < 12) by = white.y + 24;
 
-  // background
+  // fundo da caixa da barra
   ctx.beginPath();
   ctx.fillStyle = "rgba(0,0,0,0.45)";
-  roundRect(ctx, bx-6, by-6, barW+12, barH+12, 6);
+  roundRect(ctx, bx - 6, by - 6, barW + 12, barH + 12, 6);
   ctx.fill();
 
   // barra vazia
@@ -473,8 +481,8 @@ function drawCueStick(){
   ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fill();
 
-  // barra cheia (proporcional)
-  const fillW = Math.round((power/36) * barW);
+  // barra cheia com gradiente
+  const fillW = Math.round((power / 36) * barW);
   const barGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
   barGrad.addColorStop(0, "#ffef6b");
   barGrad.addColorStop(0.5, "#ffb84d");
@@ -489,7 +497,7 @@ function drawCueStick(){
   ctx.font = "11px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(power.toString(), bx + barW/2, by + barH/2);
+  ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
 // ---------- taco (cue stick) ----------
 
