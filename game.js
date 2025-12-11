@@ -654,11 +654,50 @@ function applyShot() {
   return power;
 }
 // ---------- taco (cue stick) ----------
+function drawSideCue() {
+  // área reservada para o taco lateral
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(cueArea.x, cueArea.y, cueArea.width, cueArea.height);
 
+  // trilho/slot por onde o taco sobe e desce
+  const slotX = cueArea.x + cueArea.width / 2;
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,0.15)";
+  ctx.lineWidth = 4;
+  ctx.moveTo(slotX, 20);
+  ctx.lineTo(slotX, H - 20);
+  ctx.stroke();
+
+  // posição do taco dentro do painel (0 a 36 → 36 é máxima força)
+  const maxOffset = H - 80;
+  const offsetY = maxOffset - (power / 36) * maxOffset;
+
+  // corpo do taco lateral
+  ctx.beginPath();
+  ctx.strokeStyle = "#caa87a"; // madeira
+  ctx.lineWidth = 12;
+  ctx.lineCap = "round";
+  ctx.moveTo(slotX, offsetY);
+  ctx.lineTo(slotX, offsetY + 120);
+  ctx.stroke();
+
+  // ponta do taco lateral
+  ctx.beginPath();
+  ctx.fillStyle = "#dddddd";
+  ctx.arc(slotX, offsetY, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // texto da força
+  ctx.fillStyle = "#fff";
+  ctx.font = "16px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(power.toString(), slotX, offsetY - 18);
+}
 /* ---------- draw loop ---------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
   drawTable();
+  drawSideCue();
   // desenhar pockets usando mouthPositions (tudo baseado no mouth)
   for(const m of mouthPositions){
     drawPocketByMouth(m);
