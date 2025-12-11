@@ -64,16 +64,17 @@ function onPointerDown(e) {
     return;
   }
 
-  // Se bolas em movimento → só inicia se tocar perto da branca (área permissiva)
-  if (dist <= white.r + 140) { // 140px = área permissiva em movimento
+  if (dist <= white.r + 140) {   // jogador tocou perto da bola branca
     aiming = true;
     isDragging = true;
     mouse = pos;
     pullBack = 0;
-  } else {
-    aiming = false;
-    isDragging = false;
-  }
+} else {
+    // não desativa mira se o jogo está parado
+    if (!areBallsStopped()) {
+        aiming = false;
+        isDragging = false;
+    }
 }
 
 function onPointerMove(e) {
