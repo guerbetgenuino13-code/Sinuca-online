@@ -411,9 +411,7 @@ function drawCueStick(){
 
   // stick length and position (ajustáveis)
   const stickLen = 100 + power * 4;                 // comprimento principal do taco
-  // original: const stickBack = 16 + Math.min(power,40) * 0.4;
-const stickBack = 16 - cueRecoil + Math.min(power, 40) * 0.4;
-
+const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
   // pontos principais do stick (tip fica próximo da bola)
   const tipX = white.x - Math.cos(ang) * (white.r + 6);
   const tipY = white.y - Math.sin(ang) * (white.r + 6);
