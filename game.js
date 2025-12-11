@@ -542,6 +542,52 @@ function applyShot() {
   simulationRunning = true;
 }
 
+function limitAimToBalls(white, targetX, targetY) {
+  let closestX = targetX;
+  let closestY = targetY;
+  let minDist = Infinity;
+
+  for (const b of balls) {
+    if (b === white || b.pocketed) continue;
+
+    // distância da bola ao segmento da linha da mira
+    const A = {x: white.x, y: white.y};
+    const B = {x: targetX, y: targetY};
+    const C = {x: b.x, y: b.y};
+
+    const t = ((C.x - A.x)*(B.x - A.x) + (C.y - A.y)*(B.y - A.y)) /
+              ((B.x - A.x)**2 + (B.y - A.y)**2);
+
+    if (t < 0 || t > 1) continue; // bola não está na frente da linha
+
+    const Px = A.x + t * (B.x - A.x);
+    const Py = A.y + t * (B.y - A.y);
+    const dist = Math.hypot(Px - b.x, Py - b.y);
+
+    if (dist <= b.r + 4) {
+      if (t < minDist) {
+        minDist = t;
+        closestX = Px;
+        closestY = Py;
+      }
+    }
+  }
+
+  return {x: closestX, y: closestY};
+}
+function limitAimToBorders(white, targetX, targetY) {
+  const left = table.x;
+  const right = table.x + table.width;
+  const top = table.y;
+  const bottom = table.y + table.height;
+
+  // clampa o alvo dentro da mesa
+  const clampedX = Math.max(left, Math.min(right, targetX));
+  const clampedY = Math.max(top, Math.min(bottom, targetY));
+
+  return {x: clampedX, y: clampedY};
+}
+
 /* ---------- draw loop ---------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -555,8 +601,29 @@ function draw(){
 
   if(aiming){
     const white = balls[0];
-    ctx.beginPath(); ctx.moveTo(white.x, white.y); ctx.lineTo(mouse.x, mouse.y);
-    ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 2; ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
+// Calcula mira livre → limitada por bolas e bordas
+let aimX = mouse.x;
+let aimY = mouse.y;
+
+// 1) limitar pelas bordas
+let border = limitAimToBorders(white, aimX, aimY);
+aimX = border.x;
+aimY = border.y;
+
+// 2) limitar por colisão com bolas
+let collision = limitAimToBalls(white, aimX, aimY);
+aimX = collision.x;
+aimY = collision.y;
+
+// desenha a mira final
+ctx.beginPath();
+ctx.moveTo(white.x, white.y);
+ctx.lineTo(aimX, aimY);
+ctx.strokeStyle = "rgba(255,255,255,0.9)";
+ctx.lineWidth = 2;
+ctx.setLineDash([6,6]);
+ctx.stroke();
+ctx.setLineDash([]);
     const dxm = white.x - mouse.x, dym = white.y - mouse.y;
     const power = clamp(Math.hypot(dxm,dym) / 6, 0, 36);
     ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.font = "12px sans-serif"; ctx.fillText("Força: " + Math.round(power), white.x + 12, white.y - 12);
