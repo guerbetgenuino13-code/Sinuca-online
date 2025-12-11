@@ -504,7 +504,7 @@ function draw(){
   // HUD
   const remaining = balls.filter(b => b.number > 0 && !b.pocketed).length;
   ctx.fillStyle = "#ffffff"; ctx.font = "14px sans-serif"; ctx.textAlign = "left"; ctx.fillText("Bolas restantes: " + remaining, 12, H - 12);
-  drawCue();
+  drawCueStick();
   // mira
   if(aiming){
     const white = balls[0];
