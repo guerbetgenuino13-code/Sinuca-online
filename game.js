@@ -29,6 +29,53 @@ const table = {
 const cx = table.x + table.width / 2;
 const cy = table.y + table.height / 2;
 
+// =====================================================
+// BLOCO 1 — EVENTOS DE MOUSE / TOUCH (MIRA + DISPARO)
+// =====================================================
+
+let isDragging = false;
+
+function onPointerDown(e) {
+  if (!areBallsStopped()) return;
+  isDragging = true;
+  aiming = true;
+  updateMouseFromEvent(e);
+}
+
+function onPointerMove(e) {
+  if (!isDragging) return;
+  updateMouseFromEvent(e);
+}
+
+function onPointerUp(e) {
+  if (!isDragging) return;
+  isDragging = false;
+
+  if (!aiming) return;
+  applyShot();
+  aiming = false;
+
+  cueRecoil = Math.min(20, cueRecoil + 12);
+}
+
+function updateMouseFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+  const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+
+  mouse = {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+// LISTENERS (sempre juntos deste bloco)
+canvas.addEventListener("pointerdown", onPointerDown);
+canvas.addEventListener("pointermove", onPointerMove);
+canvas.addEventListener("pointerup", onPointerUp);
+canvas.addEventListener("pointercancel", onPointerUp);
+canvas.addEventListener("mouseleave", onPointerUp);
+
 /* ---------- cores ---------- */
 const railGold = "#E0B000";
 const railBlue = "#0f4f7a";
