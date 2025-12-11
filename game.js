@@ -83,27 +83,24 @@ function onPointerMove(e) {
 
     mouse = pos;
 
-    // ===== cálculo do recuo (pullBack) =====
     const white = balls[0];
 
-    // Ângulo da mira
+    // ângulo da mira
     const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
 
-    // Ponto da ponta do taco (tip)
+    // ✔ PONTO CORRETO da ponta do taco (MESMO que drawCueStick usa!)
     const tipX = white.x - Math.cos(ang) * (white.r + 4);
     const tipY = white.y - Math.sin(ang) * (white.r + 4);
 
-    // Vetor da ponta -> dedo
+    // vetor ponta → dedo
     const vx = mouse.x - tipX;
     const vy = mouse.y - tipY;
 
-    // Projeção desse vetor NA DIREÇÃO CONTRÁRIA do taco
+    // componente na direção oposta ao taco (recuo)
     const distBack = vx * -Math.cos(ang) + vy * -Math.sin(ang);
 
-    // Limite máximo de recuo visual
     const maxPullBack = 120;
 
-    // Atualiza recuo real do taco
     pullBack = Math.max(0, Math.min(maxPullBack, distBack));
 }
 
