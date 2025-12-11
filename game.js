@@ -1,8 +1,8 @@
-/* game.js — Atualizado: adiciona 15 bolas (triângulo completo) com números
-   Mantém: mesa, pockets, mira, tacada, física básica, colisões elásticas.
+/* game.js — Atualizado: adiciona FAIXAS (striped) para bolas 9-15
+   Mantém: mesa, pockets, 15 bolas, mira, tacada, física básica, colisões elásticas.
 */
 
-console.log("game.js (15 bolas) carregado");
+console.log("game.js (15 bolas + faixas) carregado");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -43,43 +43,37 @@ const balls = [];
 balls.push(createBall(table.x + table.width*0.25, table.y + table.height/2, 10, "#ffffff", 0, 0));
 
 // Cores e design aproximado das bolas 1..15
-// Para simplicidade: usamos cor sólida para todas; desenhamos número central.
-// Você pode ajustar cores abaixo se quiser bolas lisas/rajadas distintas.
 const ballDefs = [
-  {num:1,  color:"#FFD700"}, // amarelo (1)
-  {num:2,  color:"#00008B"}, // azul escuro (2)
-  {num:3,  color:"#FF4500"}, // vermelho (3)
-  {num:4,  color:"#800080"}, // roxo (4)
-  {num:5,  color:"#FF8C00"}, // laranja (5)
-  {num:6,  color:"#8B4513"}, // marrom (6)
-  {num:7,  color:"#006400"}, // verde escuro (7)
-  {num:8,  color:"#000000"}, // preta (8)
-  {num:9,  color:"#FFFF99"}, // 9 (amarelo claro / stripe)
-  {num:10, color:"#ADD8E6"}, // 10 (azul claro / stripe)
-  {num:11, color:"#FFA07A"}, // 11 (salmon / stripe)
-  {num:12, color:"#DDA0DD"}, // 12 (plum / stripe)
-  {num:13, color:"#FFDAB9"}, // 13 (peach / stripe)
-  {num:14, color:"#A52A2A"}, // 14 (brown-ish / stripe)
-  {num:15, color:"#90EE90"}  // 15 (light green / stripe)
+  {num:1,  color:"#FFD700"}, // 1 amarelo
+  {num:2,  color:"#1E90FF"}, // 2 azul
+  {num:3,  color:"#FF4500"}, // 3 vermelho
+  {num:4,  color:"#800080"}, // 4 roxo
+  {num:5,  color:"#FF8C00"}, // 5 laranja
+  {num:6,  color:"#8B4513"}, // 6 marrom
+  {num:7,  color:"#006400"}, // 7 verde escuro
+  {num:8,  color:"#000000"}, // 8 preta
+  {num:9,  color:"#F0E68C"}, // 9 amarelo claro (stripe)
+  {num:10, color:"#87CEFA"}, // 10 azul claro (stripe)
+  {num:11, color:"#FFB6C1"}, // 11 rosa claro (stripe)
+  {num:12, color:"#DDA0DD"}, // 12 lilás (stripe)
+  {num:13, color:"#FFDAB9"}, // 13 pêssego (stripe)
+  {num:14, color:"#A52A2A"}, // 14 marrom (stripe)
+  {num:15, color:"#90EE90"}  // 15 verde claro (stripe)
 ];
 
 // Geração do triângulo de 15 bolas (linhas 5,4,3,2,1)
 const r = 10;                 // raio bola
 const spacing = r*2 + 2;      // distância entre centros
-const startX = table.x + table.width*0.65;  // posição do "ponta" do tri (aprox)
+const startX = table.x + table.width*0.65;  // posição aproximada do triângulo
 const startY = table.y + table.height/2;
 
-let idCounter = 1; // já usamos id 0 pra branca
+let idCounter = 1; // já usamos id 0 para branca
 let idx = 0;
 
 for(let row = 0; row < 5; row++){
-  // cada row tem (5 - row) ou, mais fácil: construir com 5 rows: rowSize = row+1? (vamos fazer 5,4,3,2,1)
-  // vamos construir invertido: rowsSizes = [5,4,3,2,1]
   const rowsSizes = [5,4,3,2,1];
   const rowSize = rowsSizes[row];
-  // x offset depende da row (avança para direita conforme row aumenta)
-  const x = startX + row * (spacing * 0.87); // 0.87 aproxima o acomodo triangular
-  // centramos verticalmente: para cada coluna calcular y com deslocamento para centralizar o tri
+  const x = startX + row * (spacing * 0.87); // desloca para formar triângulo
   const totalHeight = (rowSize - 1) * spacing;
   for(let col = 0; col < rowSize; col++){
     const y = startY - totalHeight/2 + col * spacing;
@@ -99,7 +93,6 @@ let aiming = false;
 let mouse = {x:0,y:0};
 
 // Utilidades
-function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
 function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
 
 // Atualiza físicas simples
@@ -189,7 +182,7 @@ function updatePhysics(){
   }
 }
 
-// Desenho mesa, pockets e bolas (com número)
+// Desenho mesa, pockets e bolas (com faixas)
 function draw(){
   // fundo
   ctx.clearRect(0,0,W,H);
@@ -220,31 +213,76 @@ function draw(){
     ctx.ellipse(b.x + 3, b.y + 5, b.r * 0.9, b.r * 0.5, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // bola (cor)
-    ctx.beginPath();
-    ctx.fillStyle = b.color;
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-    ctx.fill();
+    // se é stripe (9-15)
+    if(b.number >= 9){
+      // base branca
+      ctx.beginPath();
+      ctx.fillStyle = "#ffffff";
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      ctx.fill();
 
-    // borda
-    ctx.strokeStyle = "rgba(0,0,0,0.4)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+      // banda colorida (elipse horizontal)
+      ctx.beginPath();
+      ctx.fillStyle = b.color;
+      // largura ~ full radius, altura ~ 0.95*r (mais larga para cobrir)
+      ctx.ellipse(b.x, b.y, b.r * 0.95, b.r * 0.55, 0, 0, Math.PI*2);
+      ctx.fill();
 
-    // número da bola (se >0)
-    if(b.number && b.number > 0){
-      ctx.fillStyle = (b.color === "#000000") ? "#fff" : "#fff";
-      ctx.font = "10px sans-serif";
+      // borda da bola
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)";
+      ctx.lineWidth = 1;
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      ctx.stroke();
+
+      // círculo interno branco para o número (como na sinuca real)
+      ctx.beginPath();
+      ctx.fillStyle = "#ffffff";
+      ctx.arc(b.x, b.y, b.r * 0.5, 0, Math.PI*2);
+      ctx.fill();
+
+      // número (preto para contraste)
+      ctx.fillStyle = "#000";
+      ctx.font = `${Math.round(b.r * 0.9)}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(b.number.toString(), b.x, b.y);
-    } else if(b.number === 0){
-      // branca: desenha pequeno contorno
-      ctx.beginPath();
-      ctx.strokeStyle = "rgba(0,0,0,0.2)";
-      ctx.lineWidth = 1;
-      ctx.arc(b.x, b.y, b.r-1.4, 0, Math.PI*2);
-      ctx.stroke();
+    } else {
+      // bola sólida (1-8) ou branca(0)
+      // branca (número 0) desenhada como branco com contorno; outros sólidos coloridos
+      if(b.number === 0){
+        // branca
+        ctx.beginPath();
+        ctx.fillStyle = "#ffffff";
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(0,0,0,0.25)";
+        ctx.lineWidth = 1;
+        ctx.arc(b.x, b.y, b.r - 1.2, 0, Math.PI*2);
+        ctx.stroke();
+      } else {
+        // sólida colorida
+        ctx.beginPath();
+        ctx.fillStyle = b.color;
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.strokeStyle = "rgba(0,0,0,0.35)";
+        ctx.lineWidth = 1;
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+        ctx.stroke();
+
+        // número (branco, exceto se cor muito clara)
+        // detecta cores claras simples (heurística)
+        const lightColors = ["#FFD700","#F0E68C","#FFDAB9","#FFFF99","#ADD8E6","#90EE90","#FFA07A"];
+        const isLight = lightColors.includes(b.color);
+        ctx.fillStyle = isLight ? "#000" : "#fff";
+        ctx.font = `${Math.round(b.r * 0.9)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(b.number.toString(), b.x, b.y);
+      }
     }
   }
 
