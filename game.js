@@ -48,7 +48,6 @@ function toCanvasCoords(clientX, clientY) {
 
 /* ---------- pointer handlers (pointer API cobre mouse + touch) ---------- */
 function onPointerDown(e) {
-
   const pos = (e.touches && e.touches[0])
     ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
     : toCanvasCoords(e.clientX, e.clientY);
@@ -56,19 +55,21 @@ function onPointerDown(e) {
   const white = balls[0];
   const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
-  // 🎯 Se as bolas estão paradas → mira livre sempre
+  // Se bolas paradas → libera mira livre
   if (areBallsStopped()) {
     aiming = true;
     isDragging = true;
     mouse = pos;
+    pullBack = 0;
     return;
   }
 
-  // 🎯 Se bola está em movimento → só mira se tocar perto dela
-  if (dist <= white.r + 35) {
+  // Se bolas em movimento → só inicia se tocar perto da branca (área permissiva)
+  if (dist <= white.r + 140) { // 140px = área permissiva em movimento
     aiming = true;
     isDragging = true;
     mouse = pos;
+    pullBack = 0;
   } else {
     aiming = false;
     isDragging = false;
@@ -83,24 +84,44 @@ function onPointerMove(e) {
     : toCanvasCoords(e.clientX, e.clientY);
 
   mouse = pos;
+
+  // calcula recuo real (pull-back) — só conta quando o dedo vai PARA TRÁS da bola
+  const white = balls[0];
+  const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
+
+  // ponto da ponta do taco (próximo à bola)
+  const tipX = white.x - Math.cos(ang) * (white.r + 8);
+  const tipY = white.y - Math.sin(ang) * (white.r + 8);
+
+  // vetor do tip -> dedo
+  const vx = mouse.x - tipX;
+  const vy = mouse.y - tipY;
+
+  // componente do vetor na direção OPOSTA ao ang (quanto "puxa para trás")
+  const distBack = vx * -Math.cos(ang) + vy * -Math.sin(ang);
+
+  pullBack = Math.max(0, Math.min(maxPullBack, distBack));
 }
 
 function onPointerUp(e) {
-  if (!aiming) return;   // << ESSA LINHA IMPEDE TACADA INDESEJADA
+  if (!aiming) return;
 
   isDragging = false;
 
-  applyShot();
-  aiming = false;
-
-  // recoil visual
   const white = balls[0];
-  const dx = mouse.x - white.x;
-  const dy = mouse.y - white.y;
-  const dist = Math.hypot(dx, dy);
-  const rawPower = clamp(dist / 6, 0, 36);
-  const power = Math.round(rawPower);
-  cueRecoilTarget = Math.min(40, Math.round(power * 2.2));
+  const ang = Math.atan2(mouse.y - white.y, mouse.x - white.x);
+
+  // força baseada no recuo
+  const power = pullBack / 2; // ajuste sensibilidade: maior divisor = força menor
+
+  if (power > 0.5) { // só dispara se houver recuo significativo
+    applyShotUsingRecoil(power, ang);
+    // recuo visual do stick (mantemos o cueRecoilTarget para animação)
+    cueRecoilTarget = Math.min(40, Math.round(power * 2.2));
+  }
+
+  pullBack = 0;
+  aiming = false;
 }
 
 /* listeners */
