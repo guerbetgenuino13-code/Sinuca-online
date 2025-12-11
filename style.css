@@ -1,104 +1,81 @@
-/* style.css — visual escuro + moldura combinando com a mesa azul/dourada */
+/* style.css — Mesa estilo 8 Ball Pool (rails dourados finos + pano azul premium) */
 
 :root{
-  --bg-top: #07080b;
-  --bg-bottom: #0d1320;
-  --panel: rgba(255,255,255,0.03);
-  --accent: rgba(255, 215, 0, 0.06); /* leve brilho dourado ao redor */
-  --glass: rgba(255,255,255,0.02);
+  --bg-top: #08090e;
+  --bg-bottom: #0d121f;
 }
 
-*{box-sizing:border-box;margin:0;padding:0}
+*{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
 
 body{
   background: linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
-  color:#f1f5f9;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+  color:#f2f5f9;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial;
   display:flex;
   flex-direction:column;
   align-items:center;
-  padding:28px 18px;
+  padding:24px 12px;
 }
 
-/* Header */
 header.center{
   text-align:center;
   margin-bottom:18px;
 }
+
 .logo{
   font-size:28px;
   font-weight:700;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-}
-.sub{
-  color:#cfd8e3;
-  opacity:0.9;
-  margin-top:6px;
-  font-size:14px;
 }
 
-/* Container da mesa - com moldura e leve brilho dourado */
+.sub{
+  opacity:0.8;
+  font-size:14px;
+  margin-top:4px;
+}
+
+/* MESA */
 .table-wrap{
   width:100%;
   max-width:980px;
+  padding:8px;
   display:flex;
   justify-content:center;
   align-items:center;
-  padding:18px;
-  border-radius:16px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(0,0,0,0.03));
+
+  /* moldura preta suave */
+  background:rgba(10,10,12,0.4);
+  border-radius:18px;
+
+  /* sombra externa */
   box-shadow:
-    0 6px 30px rgba(2,6,23,0.6),
-    inset 0 1px 0 rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.02);
+    0 10px 40px rgba(0,0,0,0.6),
+    inset 0 0 8px rgba(0,0,0,0.5);
   position:relative;
-  margin-bottom:18px;
 }
 
-/* thin golden rim around the canvas to match rails */
+/* DOURADO FINO */
 .table-wrap::after{
   content:"";
   position:absolute;
-  inset:12px;
-  border-radius:12px;
+  inset:6px;
+  border-radius:14px;
+  border:3px solid rgba(255,200,0,0.25); /* filete dourado suave */
   pointer-events:none;
-  box-shadow: 0 0 0 4px rgba(255,215,0,0.03);
 }
 
-/* Canvas responsiveness */
+/* CANVAS */
 canvas{
-  display:block;
   width:100%;
-  max-width:860px; /* limit */
+  max-width:860px;
   height:auto;
-  border-radius:12px;
-  background:transparent; /* canvas paints the felt */
-  box-shadow: 0 14px 40px rgba(3,10,25,0.65);
-  transform: translateZ(0); /* GPU hint for mobile smoothness */
-}
+  display:block;
+  border-radius:14px;
 
-/* Footer / hint */
-footer.center{
-  margin-top:6px;
-  color:#9fb0c8;
-  font-size:12px;
-}
+  /* sombra forte igual 8 ball pool */
+  box-shadow:
+    0 8px 25px rgba(0,0,0,0.5),
+    inset 0 0 15px rgba(0,0,0,0.5);
 
-/* small HUD text inside canvas area (when canvas smaller on mobile) */
-@media (max-width:600px){
-  body{padding:16px;}
-  .logo{font-size:22px}
-  .table-wrap{padding:12px;border-radius:12px}
-  canvas{max-width:760px}
-}
-
-/* optional: center everything vertically on large screens */
-@media (min-height:900px){
-  body{justify-content:center}
+  background: transparent;
 }
