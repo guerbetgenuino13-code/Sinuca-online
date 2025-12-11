@@ -54,15 +54,22 @@ function onPointerDown(e) {
   const white = balls[0];
   const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
-  // Só inicia mira se o toque começar perto da bola branca
-  if (dist <= white.r + 35) {   // ajuste: 35–45px
+  // Se bolas pararam → mira livre
+if (areBallsStopped()) {
     aiming = true;
     isDragging = true;
     mouse = pos;
-  } else {
+    return;
+}
+
+// Caso contrário, mantém a regra antiga:
+if (dist <= white.r + 35) {
+    aiming = true;
+    isDragging = true;
+    mouse = pos;
+} else {
     aiming = false;
     isDragging = false;
-  }
 }
 
 function onPointerMove(e) {
