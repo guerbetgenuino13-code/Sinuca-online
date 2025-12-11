@@ -479,101 +479,106 @@ function drawPolishedBall(b){
   }
 }
 
-/* ---------- draw cue stick + power indicator (com recoil) ---------- */
-function drawCueStick(){
-  if(!aiming) return;
-  const white = balls && balls[0];
-  if(!white) return;
+function drawCueStick() {
+    if (!aiming) return;
 
-  const dx = (mouse && typeof mouse.x === "number") ? mouse.x - white.x : 1;
-  const dy = (mouse && typeof mouse.y === "number") ? mouse.y - white.y : 0;
-  const ang = Math.atan2(dy, dx);
-  const dist = Math.hypot(dx, dy);
-  const rawPower = clamp(dist / 6, 0, 36);
-  const power = Math.round(rawPower);
+    const white = balls && balls[0];
+    if (!white || !mouse) return;
 
-  const stickLen = 100 + power * 4;
-  const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
+    // direção da mira
+    const dx = mouse.x - white.x;
+    const dy = mouse.y - white.y;
+    const ang = Math.atan2(dy, dx);
 
-  const tipX = white.x - Math.cos(ang) * (white.r + 6);
-  const tipY = white.y - Math.sin(ang) * (white.r + 6);
+    // força baseada no pullBack REAL (0–36)
+    const power = Math.round(Math.min(36, pullBack / 3));
 
-  // use pullBack para recuo real + suavização via cueRecoil
-const stickRecoil = pullBack + cueRecoil;
+    // comprimento do taco
+    const stickLen = 100 + power * 4;
 
-const buttX = tipX - Math.cos(ang) * (stickRecoil + stickLen);
-const buttY = tipY - Math.sin(ang) * (stickRecoil + stickLen);
+    // ponta do taco encostando na bola
+    const tipX = white.x - Math.cos(ang) * (white.r + 4);
+    const tipY = white.y - Math.sin(ang) * (white.r + 4);
 
-  // sombra do stick
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(0,0,0,0.45)";
-  ctx.lineWidth = 11;
-  ctx.lineCap = "round";
-  ctx.moveTo(buttX + 2, buttY + 4);
-  ctx.lineTo(tipX + 2, tipY + 4);
-  ctx.stroke();
+    // recuo visual (puxado + animação de recoil)
+    const stickRecoil = pullBack + cueRecoil;
 
-  const g = ctx.createLinearGradient(buttX, buttY, tipX, tipY);
-  g.addColorStop(0, "#8B5A2B");
-  g.addColorStop(0.6, "#5a3518");
-  g.addColorStop(1, "#222");
-  ctx.beginPath();
-  ctx.strokeStyle = g;
-  ctx.lineWidth = 8;
-  ctx.lineCap = "round";
-  ctx.moveTo(buttX, buttY);
-  ctx.lineTo(tipX, tipY);
-  ctx.stroke();
+    // posição do cabo do taco
+    const buttX = tipX - Math.cos(ang) * (stickLen + stickRecoil);
+    const buttY = tipY - Math.sin(ang) * (stickLen + stickRecoil);
 
-  const wrapX = buttX + (tipX - buttX) * 0.12;
-  const wrapY = buttY + (tipY - buttY) * 0.12;
-  ctx.beginPath();
-  ctx.strokeStyle = "rgba(200,200,200,0.18)";
-  ctx.lineWidth = 6;
-  ctx.moveTo(wrapX, wrapY);
-  ctx.moveTo(wrapX, wrapY);
-  ctx.lineTo(wrapX + Math.cos(ang + Math.PI/2) * 3, wrapY + Math.sin(ang + Math.PI/2) * 3);
-  ctx.stroke();
+    // --- sombra do taco ---
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(0,0,0,0.45)";
+    ctx.lineWidth = 11;
+    ctx.lineCap = "round";
+    ctx.moveTo(buttX + 2, buttY + 4);
+    ctx.lineTo(tipX + 2, tipY + 4);
+    ctx.stroke();
 
-  const cueTipX = tipX + Math.cos(ang) * 6;
-  const cueTipY = tipY + Math.sin(ang) * 6;
-  ctx.beginPath();
-  ctx.fillStyle = "#ccc";
-  ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI*2);
-  ctx.fill();
+    // --- taco principal ---
+    const grad = ctx.createLinearGradient(buttX, buttY, tipX, tipY);
+    grad.addColorStop(0, "#8B5A2B");
+    grad.addColorStop(0.6, "#5a3518");
+    grad.addColorStop(1, "#322214");
 
-  // indicador de força
-  const barW = 90, barH = 8;
-  let bx = white.x + 28;
-  let by = white.y - 36;
-  if(bx + barW > W - 12) bx = W - barW - 16;
-  if(by < 12) by = white.y + 24;
+    ctx.beginPath();
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.moveTo(buttX, buttY);
+    ctx.lineTo(tipX, tipY);
+    ctx.stroke();
 
-  ctx.beginPath();
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  roundRect(ctx, bx - 6, by - 6, barW + 12, barH + 12, 6);
-  ctx.fill();
+    // ponta clara do taco
+    const cueTipX = tipX + Math.cos(ang) * 6;
+    const cueTipY = tipY + Math.sin(ang) * 6;
+    ctx.beginPath();
+    ctx.fillStyle = "#ccc";
+    ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.beginPath();
-  roundRect(ctx, bx, by, barW, barH, 4);
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fill();
+    // ===========================================
+    // ✔ barra de força AGORA usando pullBack real
+    // ===========================================
 
-  const fillW = Math.round((power / 36) * barW);
-  const barGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
-  barGrad.addColorStop(0, "#ffef6b");
-  barGrad.addColorStop(0.5, "#ffb84d");
-  barGrad.addColorStop(1, "#ff6b4b");
-  ctx.beginPath();
-  roundRect(ctx, bx, by, fillW, barH, 4);
-  ctx.fillStyle = barGrad;
-  ctx.fill();
+    const barW = 90, barH = 8;
+    let bx = white.x + 28;
+    let by = white.y - 36;
 
-  ctx.fillStyle = "#000";
-  ctx.font = "11px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
+    if (bx + barW > W - 12) bx = W - barW - 16;
+    if (by < 12) by = white.y + 24;
+
+    // fundo da barra
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    roundRect(ctx, bx - 6, by - 6, barW + 12, barH + 12, 6);
+    ctx.fill();
+
+    // contorno da barra
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    roundRect(ctx, bx, by, barW, barH, 4);
+    ctx.fill();
+
+    // preenchimento proporcional ao pullBack
+    const fillW = Math.round((power / 36) * barW);
+    const barGrad = ctx.createLinearGradient(bx, 0, bx + fillW, 0);
+    barGrad.addColorStop(0, "#ffef6b");
+    barGrad.addColorStop(0.5, "#ffb84d");
+    barGrad.addColorStop(1, "#ff6b4b");
+
+    ctx.beginPath();
+    roundRect(ctx, bx, by, fillW, barH, 4);
+    ctx.fillStyle = barGrad;
+    ctx.fill();
+
+    // texto da força
+    ctx.fillStyle = "#000";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
 
 function limitAimToBalls(white, targetX, targetY) {
