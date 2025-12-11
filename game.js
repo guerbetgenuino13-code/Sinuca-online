@@ -480,8 +480,11 @@ function drawCueStick(){
   const tipX = white.x - Math.cos(ang) * (white.r + 6);
   const tipY = white.y - Math.sin(ang) * (white.r + 6);
 
-  const buttX = tipX - Math.cos(ang) * (stickLen + cueRecoil);
-  const buttY = tipY - Math.sin(ang) * (stickLen + cueRecoil);
+  // use pullBack para recuo real + suavização via cueRecoil
+const stickRecoil = pullBack + cueRecoil;
+
+const buttX = tipX - Math.cos(ang) * (stickRecoil + stickLen);
+const buttY = tipY - Math.sin(ang) * (stickRecoil + stickLen);
 
   // sombra do stick
   ctx.beginPath();
