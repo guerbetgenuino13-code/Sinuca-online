@@ -519,6 +519,14 @@ function applyShot() {
   const white = balls && balls[0];
   if (!white || !mouse) return 0;
 
+  // --- PROTEÇÃO: não permita tacar se as bolas ainda estiverem em movimento ---
+  if (!areBallsStopped()) {
+    // opcional: mostrar no console para debug
+    console.warn("applyShot: tacada ignorada porque as bolas ainda estão em movimento.");
+    return 0;
+  }
+
+  // usa o MESMO cálculo da mira para garantir direção correta
   const dx = mouse.x - white.x;
   const dy = mouse.y - white.y;
   const ang = Math.atan2(dy, dx);
@@ -526,9 +534,14 @@ function applyShot() {
   const dist = Math.hypot(dx, dy);
   const rawPower = clamp(dist / 6, 0, 36);
   const power = Math.round(rawPower);
-
-  // fator de conversão power -> impulso (ajuste conforme sua física)
   const impulse = power * 0.32;
+
+  // LOG para depurar direção/valores no momento da tacada
+  console.log("applyShot -> mouse:", Math.round(mouse.x), Math.round(mouse.y),
+              "white:", Math.round(white.x), Math.round(white.y),
+              "dx,dy:", dx.toFixed(2), dy.toFixed(2),
+              "ang(deg):", (ang * 180/Math.PI).toFixed(1),
+              "power:", power, "impulse:", impulse.toFixed(2));
 
   white.vx += Math.cos(ang) * impulse;
   white.vy += Math.sin(ang) * impulse;
@@ -582,6 +595,7 @@ function getCanvasPos(e){
 // mouse/touch handlers (unificados, simples)
 // ========== NOVO SISTEMA CORRETO DE INPUT ==========
 
+// ---------- input (listeners limpos e consistentes) ----------
 canvas.addEventListener("mousedown", (e) => {
   aiming = true;
   mouse = getCanvasPos(e);
@@ -594,13 +608,31 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("mouseup", (e) => {
   if (!aiming) return;
   mouse = getCanvasPos(e);
-  applyShot();
+  applyShot();   // applyShot agora bloqueia tacada se bolas não pararam
   aiming = false;
 });
+
 canvas.addEventListener("mouseleave", () => { aiming = false; });
-canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); const m = {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY}; canvas.dispatchEvent(new MouseEvent('mousedown', m)); }, {passive:false});
-canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); mouse = getCanvasPos(e); }, {passive:false});
-canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
+
+// touch -> converte para eventos de mouse para simplificar
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  aiming = true;
+  mouse = getCanvasPos(e);
+}, {passive:false});
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  if (aiming) mouse = getCanvasPos(e);
+}, {passive:false});
+
+canvas.addEventListener("touchend", (e) => {
+  e.preventDefault();
+  if (!aiming) return;
+  // em touchend às vezes não há coordenadas, então usa último mouse salvo
+  applyShot();
+  aiming = false;
+}, {passive:false});
 
 /* ---------- loop ---------- */
 function loop(){
