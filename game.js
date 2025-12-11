@@ -45,22 +45,50 @@ const pockets = [
 /* ---------- mouthPositions (para desenhar e física) ---------- */
 // mouthOffset para posicionar a boca no recorte da madeira (a boca fica "na madeira", não em cima do felt)
 const mouthOffset = 8; // offset pequeno: boca está na borda/recorte, não para fora
-const mouthPositions = pockets.map(p => {
-  const centerX = table.x + table.width / 2;
-  const centerY = table.y + table.height / 2;
-  let dx = p.x - centerX;
-  let dy = p.y - centerY;
-  const len = Math.hypot(dx, dy) || 1;
-  dx /= len; dy /= len;
-  return {
-    px: p.x,
-    py: p.y,
-    mouthX: p.x + dx * mouthOffset,
-    mouthY: p.y + dy * mouthOffset,
-    dirX: dx,
-    dirY: dy
-  };
-});
+// Orientação manual para cada pocket (ordem: TL, TM, TR, BL, BM, BR)
+const mouthPositions = [
+  // Top-left
+  {
+    px: pockets[0].x, py: pockets[0].y,
+    mouthX: pockets[0].x + 10, mouthY: pockets[0].y + 10,
+    dirX: 1, dirY: 1
+  },
+
+  // Top-middle
+  {
+    px: pockets[1].x, py: pockets[1].y,
+    mouthX: pockets[1].x, mouthY: pockets[1].y + 12,
+    dirX: 0, dirY: 1
+  },
+
+  // Top-right
+  {
+    px: pockets[2].x, py: pockets[2].y,
+    mouthX: pockets[2].x - 10, mouthY: pockets[2].y + 10,
+    dirX: -1, dirY: 1
+  },
+
+  // Bottom-left
+  {
+    px: pockets[3].x, py: pockets[3].y,
+    mouthX: pockets[3].x + 10, mouthY: pockets[3].y - 10,
+    dirX: 1, dirY: -1
+  },
+
+  // Bottom-middle
+  {
+    px: pockets[4].x, py: pockets[4].y,
+    mouthX: pockets[4].x, mouthY: pockets[4].y - 12,
+    dirX: 0, dirY: -1
+  },
+
+  // Bottom-right
+  {
+    px: pockets[5].x, py: pockets[5].y,
+    mouthX: pockets[5].x - 10, mouthY: pockets[5].y - 10,
+    dirX: -1, dirY: -1
+  }
+];
 
 /* --------------- bolas --------------- */
 function createBall(x, y, radius=11, color="#fff", id=0, number=null){
