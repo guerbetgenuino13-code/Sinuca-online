@@ -717,7 +717,9 @@ ctx.setLineDash([]);
     ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.font = "12px sans-serif"; ctx.fillText("Força: " + Math.round(power), white.x + 12, white.y - 12);
   }
 }
-
+aiming = true;
+isDragging = false;
+pullBack = 0;
 /* ---------- main game loop ---------- */
 function gameLoop() {
   updatePhysics();
