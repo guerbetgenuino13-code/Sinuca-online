@@ -545,6 +545,28 @@ const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
   ctx.textBaseline = "middle";
   ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
+// ============================================
+// BLOCO 2 — FUNÇÃO DE APLICAR A TACADA
+// ============================================
+function applyShot() {
+  const white = balls && balls[0];
+  if (!white || !mouse) return;
+
+  const dx = mouse.x - white.x;
+  const dy = mouse.y - white.y;
+  const ang = Math.atan2(dy, dx);
+
+  const dist = Math.hypot(dx, dy);
+  const rawPower = clamp(dist / 6, 0, 36);
+  const power = Math.round(rawPower);
+
+  const impulse = power * 0.32;
+
+  white.vx += Math.cos(ang) * impulse;
+  white.vy += Math.sin(ang) * impulse;
+
+  simulationRunning = true;
+}
 // ---------- taco (cue stick) ----------
 
 /* ---------- draw loop ---------- */
