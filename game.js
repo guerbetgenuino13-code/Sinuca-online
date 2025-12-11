@@ -568,8 +568,8 @@ function drawCueStick() {
     const tipX = white.x - Math.cos(ang) * (white.r + 4);
     const tipY = white.y - Math.sin(ang) * (white.r + 4);
 
-    // recuo visual (puxado + animação de recoil)
-    const stickRecoil = pullBack + cueRecoil;
+    // durante ajuste da barra, o taco não recua — só recoil visual
+const stickRecoil = (isAdjustingPower ? 0 : pullBack) + cueRecoil;
 
     // posição do cabo do taco
     const buttX = tipX - Math.cos(ang) * (stickLen + stickRecoil);
