@@ -546,47 +546,40 @@ function drawCueStick() {
     ctx.fill();
 
     // ===========================================
-    // ✔ barra de força AGORA usando pullBack real
-    // ===========================================
+// NOVA BARRA LATERAL DE FORÇA (independente)
+// ===========================================
 
-    const barW = 90, barH = 8;
-    let bx = white.x + 28;
-    let by = white.y - 36;
+// referência da barra
+const barX = powerBar.x;
+const barY = powerBar.y = H / 2 - powerBar.h / 2;
+const barW = powerBar.w;
+const barH = powerBar.h;
 
-    if (bx + barW > W - 12) bx = W - barW - 16;
-    if (by < 12) by = white.y + 24;
+// fundo externo
+ctx.beginPath();
+ctx.fillStyle = "rgba(0,0,0,0.35)";
+roundRect(ctx, barX - 6, barY - 6, barW + 12, barH + 12, 6);
+ctx.fill();
 
-    // fundo da barra
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(0,0,0,0.45)";
-    roundRect(ctx, bx - 6, by - 6, barW + 12, barH + 12, 6);
-    ctx.fill();
+// corpo da barra
+ctx.beginPath();
+ctx.fillStyle = "#2b2b2b";
+roundRect(ctx, barX, barY, barW, barH, 6);
+ctx.fill();
 
-    // contorno da barra
-    ctx.beginPath();
-    ctx.fillStyle = "rgba(255,255,255,0.08)";
-    roundRect(ctx, bx, by, barW, barH, 4);
-    ctx.fill();
+// preenchimento baseado em shotPower
+const fillW = Math.round((shotPower / 36) * barW);
+ctx.beginPath();
+ctx.fillStyle = "#ffb84d";
+roundRect(ctx, barX, barY, fillW, barH, 6);
+ctx.fill();
 
-    // preenchimento proporcional ao pullBack
-    const fillW = Math.round((power / 36) * barW);
-    const barGrad = ctx.createLinearGradient(bx, 0, bx + fillW, 0);
-    barGrad.addColorStop(0, "#ffef6b");
-    barGrad.addColorStop(0.5, "#ffb84d");
-    barGrad.addColorStop(1, "#ff6b4b");
-
-    ctx.beginPath();
-    roundRect(ctx, bx, by, fillW, barH, 4);
-    ctx.fillStyle = barGrad;
-    ctx.fill();
-
-    // texto da força
-    ctx.fillStyle = "#000";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
-}
+// texto da barra
+ctx.fillStyle = "#fff";
+ctx.font = "13px sans-serif";
+ctx.textAlign = "center";
+ctx.textBaseline = "middle";
+ctx.fillText("Força: " + shotPower, barX + barW / 2, barY + barH / 2);
 
 function limitAimToBalls(white, targetX, targetY) {
   let closestX = targetX;
