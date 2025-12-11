@@ -28,6 +28,43 @@ window.onerror = (msg, src, line, col, err) => {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
+// --- Ajuste de resolução (corrige barra preta do taco) ---
+function resizeCanvasToDPR() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  const newW = Math.round(rect.width * dpr);
+  const newH = Math.round(rect.height * dpr);
+
+  if (canvas.width !== newW || canvas.height !== newH) {
+    canvas.width = newW;
+    canvas.height = newH;
+  }
+
+  // atualizar variáveis globais
+  window.W = canvas.width;
+  window.H = canvas.height;
+
+  // recalcular área lateral
+  const SIDE_WIDTH = 120;
+  const safeSide = Math.min(SIDE_WIDTH, Math.round(W * 0.28));
+  cueArea.x = W - safeSide;
+  cueArea.width = safeSide;
+
+  // recalcular mesa
+  table.x = railOuter;
+  table.y = railOuter;
+  table.width = W - railOuter * 2;
+  table.height = H - railOuter * 2;
+
+  // recalc centro
+  cx = table.x + table.width / 2;
+  cy = table.y + table.height / 2;
+}
+
+// chama agora e no resize
+resizeCanvasToDPR();
+window.addEventListener("resize", resizeCanvasToDPR);
 
 // ---------- mesa params ----------
 const railOuter = 28;
@@ -407,7 +444,7 @@ function drawCueStick(){
   const rawPower = clamp(dist / 6, 0, 36);
   const pwr = Math.round(rawPower) || power;
 
-  const stickLen = 100 + pwr * 4;
+  const stickLen = clamp(100 + pwr * 4, 80, 380);
   const tipX = white.x - Math.cos(ang) * (white.r + 6);
   const tipY = white.y - Math.sin(ang) * (white.r + 6);
   const buttX = tipX - Math.cos(ang) * (stickLen + cueRecoil);
