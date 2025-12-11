@@ -612,9 +612,6 @@ function drawCueStick(){
   ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
 
-// ============================================
-// BLOCO 2 — FUNÇÃO DE APLICAR A TACADA
-// ============================================
 function applyShotUsingPower(forceValue) {
   const white = balls[0];
   if (!white) return;
