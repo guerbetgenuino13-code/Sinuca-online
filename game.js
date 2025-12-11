@@ -17,8 +17,8 @@ const pocketRadius = 26;
 // ---------- cue recoil / animação globals ----------
 let cueRecoil = 0;        // animação do recuo atual
 let cueRecoilTarget = 0;  // alvo de recuo quando o jogador tacar
+let simulationRunning = false; // controla se a simulação de física está ativa
 const table = {
-  
   x: railOuter,
   y: railOuter,
   width: W - railOuter * 2,
@@ -28,53 +28,6 @@ const table = {
 
 const cx = table.x + table.width / 2;
 const cy = table.y + table.height / 2;
-
-// =====================================================
-// BLOCO 1 — EVENTOS DE MOUSE / TOUCH (MIRA + DISPARO)
-// =====================================================
-
-let isDragging = false;
-
-function onPointerDown(e) {
-  if (!areBallsStopped()) return;
-  isDragging = true;
-  aiming = true;
-  updateMouseFromEvent(e);
-}
-
-function onPointerMove(e) {
-  if (!isDragging) return;
-  updateMouseFromEvent(e);
-}
-
-function onPointerUp(e) {
-  if (!isDragging) return;
-  isDragging = false;
-
-  if (!aiming) return;
-  applyShot();
-  aiming = false;
-
-  cueRecoil = Math.min(20, cueRecoil + 12);
-}
-
-function updateMouseFromEvent(e) {
-  const rect = canvas.getBoundingClientRect();
-  const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-  const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
-
-  mouse = {
-    x: (clientX - rect.left) * (canvas.width / rect.width),
-    y: (clientY - rect.top) * (canvas.height / rect.height)
-  };
-}
-
-// LISTENERS (sempre juntos deste bloco)
-canvas.addEventListener("pointerdown", onPointerDown);
-canvas.addEventListener("pointermove", onPointerMove);
-canvas.addEventListener("pointerup", onPointerUp);
-canvas.addEventListener("pointercancel", onPointerUp);
-canvas.addEventListener("mouseleave", onPointerUp);
 
 /* ---------- cores ---------- */
 const railGold = "#E0B000";
@@ -145,10 +98,8 @@ for (let m of mouthPositions) {
 // adiciona px/py (referência de madeira) e dirX/dirY calculado
 for (let i = 0; i < mouthPositions.length; i++) {
   const m = mouthPositions[i];
-  // px/py = posição "base" da pocket (na madeira, mais perto do felt). usamos pockets[] como base
   m.px = pockets[i].x;
   m.py = pockets[i].y;
-  // direção para o centro (garante apontar pra dentro)
   let dx = cx - m.mouthX;
   let dy = cy - m.mouthY;
   const len = Math.hypot(dx, dy) || 1;
@@ -217,24 +168,19 @@ function updatePhysics(){
     if(b.y > bottom){ b.y = bottom; b.vy *= -1; }
 
     // pockets: usar mouthPositions (alinha visual + físico)
-for (const m of mouthPositions) {
-
-    const innerR = table.pocketRadius + b.r * 0.4;
-
-    const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
-
-    if (d < innerR) {
+    for (const m of mouthPositions) {
+      const innerR = table.pocketRadius + b.r * 0.4;
+      const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
+      if (d < innerR) {
         b.pocketed = true;
         b.vx = 0;
         b.vy = 0;
-
-        // joga a bola para fora da tela
         b.x = -100;
         b.y = -100;
-
         break;
+      }
     }
-}
+  }
 
   // colisões bola-bola
   for(let i=0;i<balls.length;i++){
@@ -383,7 +329,6 @@ function drawPocketByMouth(m){
   ctx.rotate(angle);
   ctx.beginPath();
   ctx.fillStyle = pocketColor;
-  // desenha a metade de baixo da elipse (que, após rotacionar, ficará orientada para dentro)
   ctx.ellipse(0, 0, innerR, innerR*0.62, 0, Math.PI, 2*Math.PI);
   ctx.fill();
   ctx.restore();
@@ -393,7 +338,6 @@ function drawPocketByMouth(m){
   const lipX = mouthX - dx * lipShift;
   const lipY = mouthY - dy * lipShift;
   ctx.beginPath();
-  // rotaciona o lip com o mesmo ângulo (melhor encaixe visual)
   ctx.save();
   ctx.translate(lipX, lipY);
   ctx.rotate(angle);
@@ -408,7 +352,6 @@ function drawPocketByMouth(m){
   grad.addColorStop(0.5, "rgba(24,6,6,0.9)");
   grad.addColorStop(1, "rgba(0,0,0,0.85)");
 
-  // desenhar a elipse de profundidade alinhada (rotate + translate)
   ctx.save();
   ctx.translate(mouthX, mouthY + innerR * 0.12);
   ctx.rotate(angle);
@@ -469,9 +412,7 @@ function drawPolishedBall(b){
   }
 }
 /* ---------- draw cue stick + power indicator ---------- */
-/* ---------- draw cue stick + power indicator (com recoil) ---------- */
 function drawCueStick(){
-  // só desenha enquanto mirando (comente temporariamente para debug)
   if(!aiming) return;
   const white = balls && balls[0];
   if(!white) return;
@@ -487,13 +428,12 @@ function drawCueStick(){
   const power = Math.round(rawPower);
 
   // stick length and position (ajustáveis)
-  const stickLen = 100 + power * 4;                 // comprimento principal do taco
-const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
-  // pontos principais do stick (tip fica próximo da bola)
+  const stickLen = 100 + power * 4;
+  const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
+
   const tipX = white.x - Math.cos(ang) * (white.r + 6);
   const tipY = white.y - Math.sin(ang) * (white.r + 6);
 
-  // aplicar recoil ao comprimento do stick para dar impacto visual
   const buttX = tipX - Math.cos(ang) * (stickLen + cueRecoil);
   const buttY = tipY - Math.sin(ang) * (stickLen + cueRecoil);
 
@@ -519,7 +459,7 @@ const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
   ctx.lineTo(tipX, tipY);
   ctx.stroke();
 
-  // detalhe de brilho próximo ao butt
+  // brilho
   const wrapX = buttX + (tipX - buttX) * 0.12;
   const wrapY = buttY + (tipY - buttY) * 0.12;
   ctx.beginPath();
@@ -537,27 +477,23 @@ const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
   ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI*2);
   ctx.fill();
 
-  // ---------- indicador de força (barra) ----------
+  // indicador de força
   const barW = 90, barH = 8;
   let bx = white.x + 28;
   let by = white.y - 36;
-  // evita sair da tela
   if(bx + barW > W - 12) bx = W - barW - 16;
   if(by < 12) by = white.y + 24;
 
-  // fundo da caixa da barra
   ctx.beginPath();
   ctx.fillStyle = "rgba(0,0,0,0.45)";
   roundRect(ctx, bx - 6, by - 6, barW + 12, barH + 12, 6);
   ctx.fill();
 
-  // barra vazia
   ctx.beginPath();
   roundRect(ctx, bx, by, barW, barH, 4);
   ctx.fillStyle = "rgba(255,255,255,0.08)";
   ctx.fill();
 
-  // barra cheia com gradiente
   const fillW = Math.round((power / 36) * barW);
   const barGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
   barGrad.addColorStop(0, "#ffef6b");
@@ -568,19 +504,19 @@ const stickBack = Math.max(8, 16 + Math.min(power, 40) * 0.4 - cueRecoil);
   ctx.fillStyle = barGrad;
   ctx.fill();
 
-  // número da força
   ctx.fillStyle = "#000";
   ctx.font = "11px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(power.toString(), bx + barW / 2, by + barH / 2);
 }
+
 // ============================================
 // BLOCO 2 — FUNÇÃO DE APLICAR A TACADA
 // ============================================
 function applyShot() {
   const white = balls && balls[0];
-  if (!white || !mouse) return;
+  if (!white || !mouse) return 0;
 
   const dx = mouse.x - white.x;
   const dy = mouse.y - white.y;
@@ -590,12 +526,18 @@ function applyShot() {
   const rawPower = clamp(dist / 6, 0, 36);
   const power = Math.round(rawPower);
 
+  // fator de conversão power -> impulso (ajuste conforme sua física)
   const impulse = power * 0.32;
 
   white.vx += Math.cos(ang) * impulse;
   white.vy += Math.sin(ang) * impulse;
 
+  // dispara recoil visual proporcional à força
+  cueRecoilTarget = Math.min(40, Math.round(power * 3));
+
   simulationRunning = true;
+
+  return power;
 }
 // ---------- taco (cue stick) ----------
 
@@ -613,8 +555,8 @@ function draw(){
   // HUD
   const remaining = balls.filter(b => b.number > 0 && !b.pocketed).length;
   ctx.fillStyle = "#ffffff"; ctx.font = "14px sans-serif"; ctx.textAlign = "left"; ctx.fillText("Bolas restantes: " + remaining, 12, H - 12);
-  
-  // mira
+
+  // mira (linha pontilhada e texto)
   if(aiming){
     const white = balls[0];
     ctx.beginPath(); ctx.moveTo(white.x, white.y); ctx.lineTo(mouse.x, mouse.y);
@@ -631,43 +573,37 @@ function getCanvasPos(e){
   let clientX, clientY;
   if(e.touches && e.touches[0]) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
   else { clientX = e.clientX; clientY = e.clientY; }
-  return {x: clientX - rect.left, y: clientY - rect.top};
+  // ajusta escala caso canvas CSS size difira do width/height
+  return {x: (clientX - rect.left) * (canvas.width / rect.width), y: (clientY - rect.top) * (canvas.height / rect.height)};
 }
+
+// mouse/touch handlers (unificados, simples)
 canvas.addEventListener("mousedown", (e) => {
   const p = getCanvasPos(e);
-  const white = balls[0]; const d = Math.hypot(p.x - white.x, p.y - white.y);
-  if(d <= white.r + 36) aiming = true; mouse = p;
+  const white = balls[0];
+  const d = Math.hypot(p.x - white.x, p.y - white.y);
+  if(d <= white.r + 36) aiming = true;
+  mouse = p;
 });
 canvas.addEventListener("mousemove", (e) => { mouse = getCanvasPos(e); });
 canvas.addEventListener("mouseup", (e) => {
   if(!aiming) return;
-  const p = getCanvasPos(e); const white = balls[0];
-  const dxm = white.x - p.x, dym = white.y - p.y;
-  const distVec = Math.hypot(dxm,dym);
-  const force = clamp(distVec / 6, 0, 36);
-  const angle = Math.atan2(dym, dxm);
-  const impulse = force * 0.95;
-  white.vx += Math.cos(angle) * impulse; white.vy += Math.sin(angle) * impulse;
+  const p = getCanvasPos(e); mouse = p;
+  // aplica tacada usando applyShot (que calcula power + recoil)
+  applyShot();
   aiming = false;
-  // dispara recoil visual proporcional à força
-cueRecoilTarget = Math.min(40, Math.round(power * 3)); // ajuste escala (3) se precisar
 });
 canvas.addEventListener("mouseleave", () => { aiming = false; });
-canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mousedown', {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY})); }, {passive:false});
+canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); const m = {clientX:e.touches[0].clientX, clientY:e.touches[0].clientY}; canvas.dispatchEvent(new MouseEvent('mousedown', m)); }, {passive:false});
 canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); mouse = getCanvasPos(e); }, {passive:false});
 canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
 /* ---------- loop ---------- */
-function loop(){ updatePhysics(); 
-  // ============================================
-// BLOCO 4 — CHAMADA NO LOOP PRINCIPAL
-// ============================================
-function gameLoop() {
+function loop(){
   updatePhysics();
-  checkAllBallsStoppedAndReactivate(); // 👈 COLOQUE AQUI
-  render();
-  requestAnimationFrame(gameLoop);
+  checkAllBallsStoppedAndReactivate(); // verifica se as bolas pararam e reabilita mira
+  cueRecoil += (cueRecoilTarget - cueRecoil) * 0.25;
+  draw();
+  requestAnimationFrame(loop);
 }
-  cueRecoil += (cueRecoilTarget - cueRecoil) * 0.25; 
-draw(); requestAnimationFrame(loop); }
 loop();
