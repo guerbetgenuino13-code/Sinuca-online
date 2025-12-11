@@ -696,7 +696,19 @@ let collision = limitAimToBalls(white, aimX, aimY);
 aimX = collision.x;
 aimY = collision.y;
 
-// desenha a mira final
+// Calcula mira livre → limitada por bordas e por colisões com bolas
+let aimX = mouse.x;
+let aimY = mouse.y;
+
+// 1) limitar pelas bordas da mesa
+const border = limitAimToBorders(white, aimX, aimY);
+aimX = border.x; aimY = border.y;
+
+// 2) limitar por colisão com outras bolas
+const collision = limitAimToBalls(white, aimX, aimY);
+aimX = collision.x; aimY = collision.y;
+
+// desenhar linha de mira final
 ctx.beginPath();
 ctx.moveTo(white.x, white.y);
 ctx.lineTo(aimX, aimY);
