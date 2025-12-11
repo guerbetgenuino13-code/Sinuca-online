@@ -53,7 +53,7 @@ const cornerOffset = 14; // ajusta quanto as bocas dos cantos saem para a diagon
 const midOffset = 14;    // offset para as bocas do meio (mantive parecido com versão anterior)
 
 // === Ajuste rápido: mouths fora do pano (offset negativo para empurrar para a madeira) ===
-const inwardOffset = -12; // negativo => empurra PARA FORA (na madeira). Ajuste: -4, -8, -12.
+const inwardOffset = -4; // negativo => empurra PARA FORA (na madeira). Ajuste: -4, -8, -12.
 
 const mouthPositions = pockets.map(p => {
   // direção do pocket para o centro (unit vector)
