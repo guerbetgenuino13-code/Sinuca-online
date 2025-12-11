@@ -52,23 +52,21 @@ const PR = pocketRadius;
 const cornerOffset = 14; // ajusta quanto as bocas dos cantos saem para a diagonal (aumente se quiser mais "pra fora")
 const midOffset = 14;    // offset para as bocas do meio (mantive parecido com versão anterior)
 
-// === nova versão: posicionamento automático "para dentro" (mais perto do pano) ===
-// inwardOffset controla quão perto do felt a boca fica (px). Use valores entre 4 e 14.
-// Valores pequenos => boca mais junto ao pano; valores maiores => boca mais para a madeira.
-const inwardOffset = 8; // ajuste aqui: 6-10 costuma ficar bom no mobile
+// === Ajuste rápido: mouths fora do pano (offset negativo para empurrar para a madeira) ===
+const inwardOffset = -8; // negativo => empurra PARA FORA (na madeira). Ajuste: -4, -8, -12.
 
 const mouthPositions = pockets.map(p => {
-  // direção do pocket para o centro da mesa (aponta para o felt)
+  // direção do pocket para o centro (unit vector)
   let dx = (cx) - p.x;
   let dy = (cy) - p.y;
   const len = Math.hypot(dx, dy) || 1;
   dx /= len; dy /= len;
 
-  // mouth fica INWARD (em direção ao felt) a partir do pocket
+  // mouth fica OUTWARD quando inwardOffset é negativo
   const mouthX = p.x + dx * inwardOffset;
   const mouthY = p.y + dy * inwardOffset;
 
-  // dirX/dirY: apontam para o centro (usadas para rotacionar o desenho)
+  // dirX/dirY apontam para o centro (usadas para rotacionar a boca)
   let dirX = (cx) - mouthX;
   let dirY = (cy) - mouthY;
   const L = Math.hypot(dirX, dirY) || 1;
