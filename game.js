@@ -728,7 +728,7 @@ canvas.addEventListener("mousemove", (e) => {
 canvas.addEventListener("mouseup", (e) => {
   if (!aiming) return;
   mouse = getCanvasPos(e);
-  applyShot();   // applyShot agora bloqueia tacada se bolas não pararam
+  applyShotUsingPower(20);
   aiming = false;
 });
 
@@ -750,7 +750,7 @@ canvas.addEventListener("touchend", (e) => {
   e.preventDefault();
   if (!aiming) return;
   // em touchend às vezes não há coordenadas, então usa último mouse salvo
-  applyShot();
+  applyShotUsingPower(20);
   aiming = false;
 }, {passive:false});
 
