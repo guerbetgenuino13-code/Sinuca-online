@@ -577,6 +577,7 @@ const stickRecoil = (isAdjustingPower ? 0 : pullBack) + cueRecoil;
     ctx.fillStyle = "#ccc";
     ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI * 2);
     ctx.fill();
+}
 
     function drawPowerBar() {
     const barX = powerBar.x;
