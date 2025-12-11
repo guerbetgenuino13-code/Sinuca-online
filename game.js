@@ -28,6 +28,38 @@ window.onerror = (msg, src, line, col, err) => {
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
+
+// ---------- mesa params ----------
+const railOuter = 28;
+const railInner = 12;
+const pocketRadius = 26;
+
+// ---------- cue recoil / animação / estado ----------
+let cueRecoil = 0;
+let cueRecoilTarget = 0;
+let simulationRunning = false;
+
+// ---------- mira / força / taco lateral ----------
+let aimPoint = { x: 0, y: 0 }; // ponto da mira (usado para direção)
+let power = 20;                // força atual controlada pelo taco lateral (0..36 aprox)
+let draggingCue = false;       // true quando arrastando a alça do taco lateral
+let cueStartY = 0;
+
+// área do taco lateral (à direita)
+const cueArea = { x: W - 120, y: 0, width: 120, height: H };
+
+// ---------- mesa (retângulo do felt) ----------
+const table = {
+  x: railOuter,
+  y: railOuter,
+  width: W - railOuter * 2,
+  height: H - railOuter * 2,
+  pocketRadius
+};
+
+const cx = table.x + table.width / 2;
+const cy = table.y + table.height / 2;
+
 // --- Ajuste de resolução (corrige barra preta do taco) ---
 function resizeCanvasToDPR() {
   const dpr = window.devicePixelRatio || 1;
@@ -65,37 +97,6 @@ function resizeCanvasToDPR() {
 // chama agora e no resize
 resizeCanvasToDPR();
 window.addEventListener("resize", resizeCanvasToDPR);
-
-// ---------- mesa params ----------
-const railOuter = 28;
-const railInner = 12;
-const pocketRadius = 26;
-
-// ---------- cue recoil / animação / estado ----------
-let cueRecoil = 0;
-let cueRecoilTarget = 0;
-let simulationRunning = false;
-
-// ---------- mira / força / taco lateral ----------
-let aimPoint = { x: 0, y: 0 }; // ponto da mira (usado para direção)
-let power = 20;                // força atual controlada pelo taco lateral (0..36 aprox)
-let draggingCue = false;       // true quando arrastando a alça do taco lateral
-let cueStartY = 0;
-
-// área do taco lateral (à direita)
-const cueArea = { x: W - 120, y: 0, width: 120, height: H };
-
-// ---------- mesa (retângulo do felt) ----------
-const table = {
-  x: railOuter,
-  y: railOuter,
-  width: W - railOuter * 2,
-  height: H - railOuter * 2,
-  pocketRadius
-};
-
-const cx = table.x + table.width / 2;
-const cy = table.y + table.height / 2;
 
 // ---------- cores ----------
 const railGold = "#E0B000";
