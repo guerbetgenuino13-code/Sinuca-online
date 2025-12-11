@@ -45,36 +45,42 @@ function toCanvasCoords(clientX, clientY) {
 
 /* ---------- pointer handlers (pointer API cobre mouse + touch) ---------- */
 function onPointerDown(e) {
-  // se bolas em movimento, não permitir iniciar mira
   if (!areBallsStopped()) return;
-  isDragging = true;
-  aiming = true;
-  const p = (e.touches && e.touches[0]) ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY) : toCanvasCoords(e.clientX, e.clientY);
-  mouse = p;
-}
-function onPointerMove(e) {
-  if (!isDragging && !aiming) return;
-  const p = (e.touches && e.touches[0]) ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY) : toCanvasCoords(e.clientX, e.clientY);
-  mouse = p;
-}
-function onPointerUp(e) {
-  if (!isDragging && !aiming) return;
-  isDragging = false;
-  if (!aiming) return;
 
-  // calcular força/ângulo e aplicar tacada usando a mesma lógica de applyShot()
+  const pos = (e.touches && e.touches[0])
+    ? toCanvasCoords(e.touches[0].clientX, e.touches[0].clientY)
+    : toCanvasCoords(e.clientX, e.clientY);
+
+  const white = balls[0];
+  const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
+
+  // Só inicia mira se o toque começar perto da bola branca
+  if (dist <= white.r + 35) {   // ajuste: 35–45px
+    aiming = true;
+    isDragging = true;
+    mouse = pos;
+  } else {
+    aiming = false;
+    isDragging = false;
+  }
+}
+
+function onPointerUp(e) {
+  if (!aiming) return;   // << ESSA LINHA IMPEDE TACADA INDESEJADA
+
+  isDragging = false;
+
   applyShot();
   aiming = false;
 
-  // recuo visual proporcional à distância/força
-  // calculamos o 'power' localmente (mesma fórmula do applyShot)
+  // recoil visual
   const white = balls[0];
   const dx = mouse.x - white.x;
   const dy = mouse.y - white.y;
   const dist = Math.hypot(dx, dy);
   const rawPower = clamp(dist / 6, 0, 36);
   const power = Math.round(rawPower);
-  cueRecoilTarget = Math.min(40, Math.round(power * 2.2)); // escala visual
+  cueRecoilTarget = Math.min(40, Math.round(power * 2.2));
 }
 
 /* listeners */
