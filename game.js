@@ -387,7 +387,110 @@ function drawPolishedBall(b){
     }
   }
 }
+/* ---------- draw cue stick + power indicator ---------- */
+function drawCueStick(){
+  if(!aiming) return;
+  const white = balls[0];
+  // direção da tacada (da bola para o mouse)
+  const dx = mouse.x - white.x;
+  const dy = mouse.y - white.y;
+  const ang = Math.atan2(dy, dx);
 
+  // força atual (mesma lógica do cálculo de impulso)
+  const dist = Math.hypot(dx, dy);
+  const rawPower = clamp(dist / 6, 0, 36);
+  const power = Math.round(rawPower);
+
+  // stick length and position: fica POR TRÁS da bola, proporcional à força
+  const stickLen = 120 + power * 3; // ajuste visual: 120px base
+  const stickBack = 18 + Math.min(power, 40) * 0.4; // distância da superfície da bola
+
+  // stick endpoints (em coordenadas)
+  const tipX = white.x - Math.cos(ang) * (white.r + 6); // ponta encostando na bola (pequeno offset)
+  const tipY = white.y - Math.sin(ang) * (white.r + 6);
+  const buttX = tipX - Math.cos(ang) * stickLen;
+  const buttY = tipY - Math.sin(ang) * stickLen;
+
+  // desenha sombra do stick
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.lineWidth = 10;
+  ctx.lineCap = "round";
+  ctx.moveTo(buttX+2, buttY+4);
+  ctx.lineTo(tipX+2, tipY+4);
+  ctx.stroke();
+
+  // desenha corpo do stick (gradiente madeira -> ponta escura)
+  const g = ctx.createLinearGradient(buttX, buttY, tipX, tipY);
+  g.addColorStop(0, "#8B5A2B"); // madeira clara
+  g.addColorStop(0.6, "#5a3518"); // madeira escura
+  g.addColorStop(1, "#222"); // ponta
+  ctx.beginPath();
+  ctx.strokeStyle = g;
+  ctx.lineWidth = 8;
+  ctx.lineCap = "round";
+  ctx.moveTo(buttX, buttY);
+  ctx.lineTo(tipX, tipY);
+  ctx.stroke();
+
+  // detalhe metal near butt (wrap)
+  const wrapX = buttX + (tipX - buttX) * 0.12;
+  const wrapY = buttY + (tipY - buttY) * 0.12;
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(200,200,200,0.18)";
+  ctx.lineWidth = 6;
+  ctx.moveTo(wrapX, wrapY);
+  ctx.lineTo(wrapX + Math.cos(ang + Math.PI/2)*3, wrapY + Math.sin(ang + Math.PI/2)*3);
+  ctx.stroke();
+
+  // ponta do stick (cola/ponta)
+  const cueTipX = tipX + Math.cos(ang) * 6;
+  const cueTipY = tipY + Math.sin(ang) * 6;
+  ctx.beginPath();
+  ctx.fillStyle = "#ccc";
+  ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI*2);
+  ctx.fill();
+
+  // indicador de força — barra fixa próxima ao branco (acima/à direita)
+  const barW = 90, barH = 8;
+  const pad = 16;
+  let bx = white.x + 24;
+  let by = white.y - 34;
+
+  // mantém indicador dentro do canvas
+  if(bx + barW > W - 8) bx = W - barW - 12;
+  if(by < 12) by = white.y + 24;
+
+  // background
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  roundRect(ctx, bx-6, by-6, barW+12, barH+12, 6);
+  ctx.fill();
+
+  // barra vazia
+  ctx.beginPath();
+  roundRect(ctx, bx, by, barW, barH, 4);
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fill();
+
+  // barra cheia (proporcional)
+  const fillW = Math.round((power/36) * barW);
+  const barGrad = ctx.createLinearGradient(bx, by, bx + barW, by);
+  barGrad.addColorStop(0, "#ffef6b");
+  barGrad.addColorStop(0.5, "#ffb84d");
+  barGrad.addColorStop(1, "#ff6b4b");
+  ctx.beginPath();
+  roundRect(ctx, bx, by, fillW, barH, 4);
+  ctx.fillStyle = barGrad;
+  ctx.fill();
+
+  // número da força
+  ctx.fillStyle = "#000";
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(power.toString(), bx + barW/2, by + barH/2);
+}
 /* ---------- draw loop ---------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -401,6 +504,7 @@ function draw(){
   // HUD
   const remaining = balls.filter(b => b.number > 0 && !b.pocketed).length;
   ctx.fillStyle = "#ffffff"; ctx.font = "14px sans-serif"; ctx.textAlign = "left"; ctx.fillText("Bolas restantes: " + remaining, 12, H - 12);
+  drawCue();
   // mira
   if(aiming){
     const white = balls[0];
