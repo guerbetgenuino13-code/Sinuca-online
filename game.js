@@ -389,7 +389,7 @@ function drawPolishedBall(b){
 }
 /* ---------- draw cue stick + power indicator ---------- */
 function drawCueStick(){
-  if(!aiming) return;
+// if(!aiming) return;  // comentado apenas para teste
   const white = balls[0];
   // direção da tacada (da bola para o mouse)
   const dx = mouse.x - white.x;
