@@ -649,6 +649,16 @@ canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); mouse = getCanva
 canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
 /* ---------- loop ---------- */
-function loop(){ updatePhysics();cueRecoil += (cueRecoilTarget - cueRecoil) * 0.25; 
+function loop(){ updatePhysics(); 
+  // ============================================
+// BLOCO 4 — CHAMADA NO LOOP PRINCIPAL
+// ============================================
+function gameLoop() {
+  updatePhysics();
+  checkAllBallsStoppedAndReactivate(); // 👈 COLOQUE AQUI
+  render();
+  requestAnimationFrame(gameLoop);
+}
+  cueRecoil += (cueRecoilTarget - cueRecoil) * 0.25; 
 draw(); requestAnimationFrame(loop); }
 loop();
