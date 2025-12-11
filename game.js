@@ -104,7 +104,7 @@ const cornerOffset = 14; // ajusta quanto as bocas dos cantos saem para a diagon
 const midOffset = 14;    // offset para as bocas do meio (mantive parecido com versão anterior)
 
 // === Ajuste rápido: mouths fora do pano (offset negativo para empurrar para a madeira) ===
-const inwardOffset = -4; // negativo => empurra PARA FORA (na madeira). Ajuste: -4, -8, -12.
+const inwardOffset = -10; // negativo => empurra PARA FORA (na madeira). Ajuste: -4, -8, -12.
 
 const mouthPositions = pockets.map(p => {
   // direção do pocket para o centro (unit vector)
@@ -217,26 +217,24 @@ function updatePhysics(){
     if(b.y > bottom){ b.y = bottom; b.vy *= -1; }
 
     // pockets: usar mouthPositions (alinha visual + físico)
-  for (const m of mouthPositions) {
-    // raio efetivo da caçapa
+for (const m of mouthPositions) {
+
     const innerR = table.pocketRadius + b.r * 0.4;
 
-    // distância da bola até o centro da caçapa
-    const d = Math.hypot(b.x - m.x, b.y - m.y);
+    const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
 
     if (d < innerR) {
         b.pocketed = true;
         b.vx = 0;
         b.vy = 0;
 
-        // opcional: joga a bola "para dentro" (fora da mesa)
+        // joga a bola para fora da tela
         b.x = -100;
         b.y = -100;
 
         break;
     }
-   }
-  }
+}
 
   // colisões bola-bola
   for(let i=0;i<balls.length;i++){
