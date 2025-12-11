@@ -256,6 +256,28 @@ function updatePhysics(){
       }
     }
   }
+  
+function applyShotWithPower() {
+  const white = balls[0];
+  if (!white) return;
+
+  // direção baseada na mira atual (mouse)
+  const dx = mouse.x - white.x;
+  const dy = mouse.y - white.y;
+  const ang = Math.atan2(dy, dx);
+
+  const impulse = shotPower * 0.32; // ajuste escala se quiser
+
+  white.vx += Math.cos(ang) * impulse;
+  white.vy += Math.sin(ang) * impulse;
+
+  simulationRunning = true;
+  aiming = false;
+
+  // anima recoil do taco (visual)
+  cueRecoilTarget = Math.min(40, Math.round(shotPower * 2));
+  shotPower = 0;
+}
 
 function applyShotUsingRecoil(power, ang) {
   const white = balls[0];
