@@ -1,19 +1,20 @@
-/* game.js — Versão completa com boca das caçapas deslocada (mouthOffset), mesa 8-ball visual,
-   bolas sólidas e listradas, física básica, mira e tacada.
+/* game.js — Versão B: caçapas EMBUTIDAS (meia-lua), recorte na madeira, mesa 8-ball simplificada
+   Substitua todo o conteúdo atual por este arquivo.
 */
 
-console.log("game.js (8-ball visual + boca deslocada) carregado");
+console.log("game.js (8-ball visual, pockets embutidos - versão B) carregado");
 
-/* ---------------- canvas ---------------- */
+/* --------------- canvas --------------- */
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
 
-/* ---------------- mesa / parâmetros visuais ---------------- */
+/* --------------- mesa / parâmetros --------------- */
 const railOuter = 28;    // espaço total do rail externo
-const railInner = 12;    // largura da faixa interna
-const pocketRadius = 26;
+const railInner = 12;    // largura da faixa interna azul
+const pocketRadius = 26; // raio visual de pocket (usado para dimensões)
 
+// área do felt
 const table = {
   x: railOuter,
   y: railOuter,
@@ -29,6 +30,7 @@ const railBlue = "#0f4f7a";
 const feltCenter = "#2f77b3";
 const feltEdge = "#13354b";
 const pocketColor = "#0b0f12";
+const woodColor = "#caa87a"; // tom simplificado da madeira (ornamentação simplificada)
 
 /* pockets (centros originais) */
 const pockets = [
@@ -40,8 +42,9 @@ const pockets = [
   {x: table.x + table.width, y: table.y + table.height}
 ];
 
-/* ---------- mouth offset e mouthPositions (usado por desenho e física) ---------- */
-const mouthOffset = 18; // controle da "abertura" — aumentar para abrir mais, diminuir para fechar
+/* ---------- mouthPositions (para desenhar e física) ---------- */
+// mouthOffset para posicionar a boca no recorte da madeira (a boca fica "na madeira", não em cima do felt)
+const mouthOffset = 8; // offset pequeno: boca está na borda/recorte, não para fora
 const mouthPositions = pockets.map(p => {
   const centerX = table.x + table.width / 2;
   const centerY = table.y + table.height / 2;
@@ -59,7 +62,7 @@ const mouthPositions = pockets.map(p => {
   };
 });
 
-/* ---------------- bolas ---------------- */
+/* --------------- bolas --------------- */
 function createBall(x, y, radius=11, color="#fff", id=0, number=null){
   return {x, y, vx:0, vy:0, r: radius, color, id, mass: radius, number, pocketed:false};
 }
@@ -68,7 +71,7 @@ const balls = [];
 // branca
 balls.push(createBall(table.x + table.width * 0.22, table.y + table.height/2, 11, "#ffffff", 0, 0));
 
-// definições das bolas (cores ajustadas)
+// definições das bolas (cores)
 const ballDefs = [
   {num:1, color:"#FFD200"},
   {num:2, color:"#0E6FFF"},
@@ -89,7 +92,7 @@ const ballDefs = [
 
 // monta triângulo 15 bolas (5,4,3,2,1)
 const r = 11;
-const spacing = r*2 + 0;
+const spacing = r*2;
 const startX = table.x + table.width*0.66;
 const startY = table.y + table.height/2;
 let idCounter = 1;
@@ -109,7 +112,7 @@ for(let row=0; row<5; row++){
   if(idx >= 15) break;
 }
 
-/* ---------------- física ---------------- */
+/* --------------- física --------------- */
 const friction = 0.992;
 const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
 let aiming = false;
@@ -119,14 +122,12 @@ function updatePhysics(){
   for(const b of balls){
     if(b.pocketed) continue;
 
-    // mover
     b.x += b.vx; b.y += b.vy;
-    // atrito
     b.vx *= friction; b.vy *= friction;
     if(Math.abs(b.vx) < 0.01) b.vx = 0;
     if(Math.abs(b.vy) < 0.01) b.vy = 0;
 
-    // colisão com rails internos (limites do felt)
+    // limites do felt
     const left = table.x + b.r;
     const right = table.x + table.width - b.r;
     const top = table.y + b.r;
@@ -137,40 +138,31 @@ function updatePhysics(){
     if(b.y < top){ b.y = top; b.vy *= -1; }
     if(b.y > bottom){ b.y = bottom; b.vy *= -1; }
 
-    // pockets check — usa mouthPositions para alinhas física com visual
+    // pockets check (alinhado com mouthPositions)
     for(const m of mouthPositions){
-      const innerR = table.pocketRadius - 6;
+      const innerR = table.pocketRadius - 8; // um pouco menor pra encaixe consistente
       const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
       if(d < innerR){
-        b.vx = 0;
-        b.vy = 0;
-        b.pocketed = true;
-        b.x = -1000;
-        b.y = -1000;
+        b.vx = 0; b.vy = 0; b.pocketed = true; b.x = -1000; b.y = -1000;
         break;
       }
     }
   }
 
-  // colisões bola-bola (pairwise)
+  // colisões bola-bola
   for(let i=0;i<balls.length;i++){
     for(let j=i+1;j<balls.length;j++){
       const A = balls[i], B = balls[j];
       if(A.pocketed || B.pocketed) continue;
-
-      const dx = B.x - A.x;
-      const dy = B.y - A.y;
-      const distAB = Math.hypot(dx,dy);
+      const dx = B.x - A.x, dy = B.y - A.y;
+      const dist = Math.hypot(dx,dy);
       const minDist = A.r + B.r;
-      if(distAB > 0 && distAB < minDist){
-        // correção posicional
-        const overlap = (minDist - distAB) / 2;
-        const nx = dx / distAB;
-        const ny = dy / distAB;
+      if(dist > 0 && dist < minDist){
+        const overlap = (minDist - dist) / 2;
+        const nx = dx / dist, ny = dy / dist;
         A.x -= nx * overlap; A.y -= ny * overlap;
         B.x += nx * overlap; B.y += ny * overlap;
 
-        // resolver velocidades (colisão elástica)
         const tx = -ny, ty = nx;
         const vAn = A.vx * nx + A.vy * ny;
         const vAt = A.vx * tx + A.vy * ty;
@@ -188,8 +180,7 @@ function updatePhysics(){
   }
 }
 
-/* ---------------- desenho: mesa (com gradiente) ---------------- */
-
+/* --------------- utilitários de desenho --------------- */
 function roundRect(ctx, x, y, w, h, r){
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -198,6 +189,13 @@ function roundRect(ctx, x, y, w, h, r){
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+function shadeHex(hex, amt){
+  const c = hex.replace("#",""); const n = parseInt(c,16);
+  let r = (n>>16) + amt; let g = ((n>>8)&0xff) + amt; let b = (n & 0xff) + amt;
+  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
+  return "#" + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
 }
 
 function lighten(hex, frac){
@@ -209,44 +207,38 @@ function lighten(hex, frac){
   return "#" + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
 }
 
-function shadeHex(hex, amt){
-  const c = hex.replace("#",""); const n = parseInt(c,16);
-  let r = (n>>16) + amt; let g = ((n>>8)&0xff) + amt; let b = (n & 0xff) + amt;
-  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
-  return "#" + ((1<<24) + (r<<16) + (g<<8) + b).toString(16).slice(1);
-}
-
+/* --------------- desenhar mesa (com strip de madeira + filete dourado) --------------- */
 function drawTable(){
-  // fundo externo
+  // fundo geral
   ctx.fillStyle = "#0c0d10";
   ctx.fillRect(0,0,W,H);
 
-  // outer rail (base escura)
+  // outer rail escuro (contorno)
   const outerX = table.x - railOuter;
   const outerY = table.y - railOuter;
-  const outerW = table.width + railOuter*2;
-  const outerH = table.height + railOuter*2;
+  const outerW = table.width + railOuter * 2;
+  const outerH = table.height + railOuter * 2;
   ctx.fillStyle = "#070707";
   roundRect(ctx, outerX, outerY, outerW, outerH, 18);
   ctx.fill();
 
-  // detalhe dourado escuro (base)
+  // faixa dourada fina (na madeira)
   const goldInset = 6;
-  ctx.fillStyle = railGoldDark;
+  ctx.fillStyle = woodColor;
   roundRect(ctx, outerX + goldInset, outerY + goldInset, outerW - goldInset*2, outerH - goldInset*2, 16);
   ctx.fill();
 
-  // filete dourado principal
+  // filete dourado
   ctx.fillStyle = railGold;
   roundRect(ctx, outerX + goldInset + 2, outerY + goldInset + 2, outerW - (goldInset+2)*2, outerH - (goldInset+2)*2, 14);
   ctx.fill();
 
-  // faixa azul decorativa
+  // faixa azul interna (decorativa, onde a madeira encontra o felt)
   ctx.fillStyle = railBlue;
   roundRect(ctx, table.x - railInner/2, table.y - railInner/2, table.width + railInner, table.height + railInner, 12);
   ctx.fill();
 
-  // felt radial gradient (claro no centro)
+  // felt radial gradient (mais claro no centro)
   const cx = table.x + table.width/2;
   const cy = table.y + table.height/2;
   const maxR = Math.max(table.width, table.height) * 0.7;
@@ -265,10 +257,9 @@ function drawTable(){
   ctx.fill();
 }
 
-/* ---------------- desenho: caçapas com boca deslocada ---------------- */
-
+/* --------------- desenhar caçapas EMBUTIDAS (meia-lua na madeira) --------------- */
 function drawPocket(px, py){
-  // encontra mouthPosition correspondente
+  // achar mouthPosition para esta pocket
   const mp = mouthPositions.find(m => Math.abs(m.px - px) < 1 && Math.abs(m.py - py) < 1);
   const mouthX = mp ? mp.mouthX : px;
   const mouthY = mp ? mp.mouthY : py;
@@ -277,44 +268,50 @@ function drawPocket(px, py){
 
   const innerR = table.pocketRadius - 6;
 
-  // 1) anel exterior decorativo
+  // 1) anel exterior decorativo (já desenhado na madeira, mas desenhamos uma sombra extra)
   ctx.beginPath();
-  ctx.fillStyle = "#1b1108";
-  ctx.arc(px, py, table.pocketRadius + 8, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.arc(px, py, table.pocketRadius + 10, 0, Math.PI*2);
   ctx.fill();
 
-  // 2) boca (cavidade escura deslocada para fora)
+  // 2) recorte da madeira: desenhar um "meia-lua" (corte) no lado da madeira
+  // Para isso desenhamos a madeira sobre a área e "recortamos" uma meia-lua transparente visualmente
+  // Simplesmente desenhamos a abertura meia-lua na posição mouthX,mouthY com cor escura (profundidade)
   ctx.beginPath();
-  ctx.fillStyle = pocketColor;
-  ctx.arc(mouthX, mouthY, innerR, 0, Math.PI*2);
+  ctx.fillStyle = pocketColor; // cavidade profunda
+  // boca meia-lua: arco maior (visível), com corte superior reto (para lembrar recorte)
+  // desenhamos como elipse escura central
+  ctx.ellipse(mouthX, mouthY, innerR, innerR * 0.6, 0, Math.PI, 2 * Math.PI);
   ctx.fill();
 
-  // 3) lábio do feltro — maior e deslocado levemente para dentro
-  ctx.save();
+  // 3) pequeno recorte azul no topo da boca (o "lábio" do felt) — mas desenhado como proeminência para baixo
   ctx.beginPath();
-  const lipW = innerR * 1.9;
-  const lipH = innerR * 0.55;
-  const lipShift = innerR * 0.18;
-  ctx.ellipse(mouthX - dx * lipShift, mouthY - dy * lipShift, lipW/2, lipH/2, 0, 0, Math.PI*2);
-  ctx.fillStyle = shadeHex(feltCenter, -20);
-  ctx.fill();
-  ctx.restore();
-
-  // 4) sombra dentro da boca (profundidade aumentada)
-  ctx.beginPath();
-  ctx.fillStyle = "rgba(0,0,0,0.52)";
-  ctx.ellipse(mouthX, mouthY + innerR*0.22, innerR*0.92, innerR*0.52, 0, 0, Math.PI*2);
+  const lipW = innerR * 0.9;
+  const lipH = innerR * 0.28;
+  // coloco o lip levemente acima (para parecer que é o felt recortado sobre a madeira)
+  ctx.ellipse(mouthX, mouthY - innerR*0.26, lipW, lipH, 0, 0, Math.PI*2);
+  ctx.fillStyle = shadeHex(feltCenter, -8); // tom um pouco mais escuro que o felt central
   ctx.fill();
 
-  // 5) destaque sutil no lábio
+  // 4) profundidade interna — degradê escuro para dentro
+  const g = ctx.createRadialGradient(mouthX, mouthY + innerR*0.12, innerR*0.1, mouthX, mouthY + innerR*0.12, innerR*0.95);
+  g.addColorStop(0, "rgba(40,16,16,0.95)");
+  g.addColorStop(0.5, "rgba(24,6,6,0.9)");
+  g.addColorStop(1, "rgba(0,0,0,0.85)");
   ctx.beginPath();
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.ellipse(mouthX - dx*2.0, mouthY - dy*2.0, innerR*0.66, innerR*0.22, 0, 0, Math.PI*2);
+  ctx.ellipse(mouthX, mouthY + innerR*0.12, innerR*0.88, innerR*0.54, 0, 0, Math.PI*2);
+  ctx.fillStyle = g;
   ctx.fill();
+
+  // 5) destaque leve na borda superior interna (afinando o relevo)
+  ctx.beginPath();
+  ctx.strokeStyle = "rgba(255,255,255,0.04)";
+  ctx.lineWidth = 1;
+  ctx.ellipse(mouthX, mouthY - innerR*0.18, innerR*0.8, innerR*0.26, 0, 0, Math.PI*2);
+  ctx.stroke();
 }
 
-/* ---------------- desenho: bolas (polidas, striped + solid) ---------------- */
-
+/* --------------- desenhar bolas --------------- */
 function drawPolishedBall(b){
   if(b.pocketed) return;
 
@@ -327,13 +324,11 @@ function drawPolishedBall(b){
   const isStripe = b.number >= 9;
 
   if(isStripe){
-    // base branca
     ctx.beginPath();
     ctx.fillStyle = "#ffffff";
     ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
     ctx.fill();
 
-    // stripe (clipped)
     ctx.save();
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.r - 0.4, 0, Math.PI*2);
@@ -344,20 +339,17 @@ function drawPolishedBall(b){
     ctx.fill();
     ctx.restore();
 
-    // rim
     ctx.beginPath();
     ctx.lineWidth = 1;
     ctx.strokeStyle = "rgba(0,0,0,0.34)";
     ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
     ctx.stroke();
 
-    // centro branco com número
     ctx.beginPath();
     ctx.fillStyle = "#ffffff";
     ctx.arc(b.x, b.y, b.r*0.48, 0, Math.PI*2);
     ctx.fill();
 
-    // highlight
     const grad = ctx.createRadialGradient(b.x - b.r*0.35, b.y - b.r*0.45, 1, b.x, b.y, b.r*1.2);
     grad.addColorStop(0, "rgba(255,255,255,0.92)");
     grad.addColorStop(0.25, "rgba(255,255,255,0.18)");
@@ -367,7 +359,6 @@ function drawPolishedBall(b){
     ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
     ctx.fill();
 
-    // número
     ctx.fillStyle = "#000";
     ctx.font = `${Math.round(b.r * 0.85)}px sans-serif`;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -385,9 +376,7 @@ function drawPolishedBall(b){
       ctx.stroke();
 
       const hg = ctx.createRadialGradient(b.x - b.r*0.35, b.y - b.r*0.45, 1, b.x, b.y, b.r*1.2);
-      hg.addColorStop(0, "rgba(255,255,255,0.95)");
-      hg.addColorStop(0.3, "rgba(255,255,255,0.25)");
-      hg.addColorStop(1, "rgba(255,255,255,0)");
+      hg.addColorStop(0, "rgba(255,255,255,0.95)"); hg.addColorStop(0.3, "rgba(255,255,255,0.25)"); hg.addColorStop(1, "rgba(255,255,255,0)");
       ctx.beginPath(); ctx.fillStyle = hg; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
     } else {
       const dark = shadeHex(b.color, -36);
@@ -399,7 +388,6 @@ function drawPolishedBall(b){
 
       ctx.beginPath(); ctx.lineWidth = 1; ctx.strokeStyle = "rgba(0,0,0,0.34)"; ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke();
 
-      // pequeno círculo branco para contraste do número
       ctx.beginPath(); ctx.fillStyle = "#ffffff"; ctx.arc(b.x, b.y, b.r*0.48, 0, Math.PI*2); ctx.fill();
 
       const darkColors = ["#0E6FFF","#8E3AC1","#8B4A2F","#1E8A3A","#000000"];
@@ -412,8 +400,7 @@ function drawPolishedBall(b){
   }
 }
 
-/* ---------------- desenhar tudo e HUD ---------------- */
-
+/* --------------- desenhar tudo e HUD --------------- */
 function draw(){
   ctx.clearRect(0,0,W,H);
 
@@ -453,8 +440,7 @@ function draw(){
   }
 }
 
-/* ---------------- input (mouse + touch) ---------------- */
-
+/* --------------- input (mouse + touch) --------------- */
 function getCanvasPos(e){
   const rect = canvas.getBoundingClientRect();
   let clientX, clientY;
@@ -489,7 +475,7 @@ canvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); canvas.dispatch
 canvas.addEventListener("touchmove", (e)=>{ e.preventDefault(); mouse = getCanvasPos(e); }, {passive:false});
 canvas.addEventListener("touchend", (e)=>{ e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup')); }, {passive:false});
 
-/* ---------------- loop ---------------- */
+/* --------------- loop --------------- */
 function loop(){
   updatePhysics();
   draw();
