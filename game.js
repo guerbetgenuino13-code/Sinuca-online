@@ -682,19 +682,6 @@ function draw(){
 
   if(aiming){
     const white = balls[0];
-// Calcula mira livre → limitada por bolas e bordas
-let aimX = mouse.x;
-let aimY = mouse.y;
-
-// 1) limitar pelas bordas
-let border = limitAimToBorders(white, aimX, aimY);
-aimX = border.x;
-aimY = border.y;
-
-// 2) limitar por colisão com bolas
-let collision = limitAimToBalls(white, aimX, aimY);
-aimX = collision.x;
-aimY = collision.y;
 
 // Calcula mira livre → limitada por bordas e por colisões com bolas
 let aimX = mouse.x;
