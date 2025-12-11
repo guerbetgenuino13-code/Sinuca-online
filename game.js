@@ -154,39 +154,35 @@ function updatePhysics(){
 /* ---------- Drawing helpers for 8-ball look ---------- */
 
 function drawTable(){
-  // outer rail shadow/background
+  // fundo externo / shadow
   ctx.fillStyle = "#0c0d10";
   ctx.fillRect(0,0,W,H);
 
-  // big rail (darker wood / shadow)
+  // rail base (escuro)
   const outerX = table.x - railOuter;
   const outerY = table.y - railOuter;
   const outerW = table.width + railOuter*2;
   const outerH = table.height + railOuter*2;
-
-  // main rail base
   ctx.fillStyle = "#070707";
   roundRect(ctx, outerX, outerY, outerW, outerH, 18);
   ctx.fill();
 
-  // thin golden filete near inner edge
+  // golden filete e detalhe escuro por baixo para profundidade
   const goldInset = 6;
-  const goldThickness = 6; // small thin filete
   ctx.fillStyle = railGoldDark;
   roundRect(ctx, outerX + goldInset, outerY + goldInset, outerW - goldInset*2, outerH - goldInset*2, 16);
   ctx.fill();
 
-  // actual narrow gold line
   ctx.fillStyle = railGold;
   roundRect(ctx, outerX + goldInset + 2, outerY + goldInset + 2, outerW - (goldInset+2)*2, outerH - (goldInset+2)*2, 14);
   ctx.fill();
 
-  // inner decorative blue strip (subtle)
+  // inner decorative blue strip
   ctx.fillStyle = railBlue;
   roundRect(ctx, table.x - railInner/2, table.y - railInner/2, table.width + railInner, table.height + railInner, 12);
   ctx.fill();
 
-  // draw the felt as radial gradient (center bright)
+  // felt radial gradient (mais claro no centro)
   const cx = table.x + table.width/2;
   const cy = table.y + table.height/2;
   const maxR = Math.max(table.width, table.height) * 0.7;
@@ -194,41 +190,73 @@ function drawTable(){
   grad.addColorStop(0, lighten(feltCenter, 0.06));
   grad.addColorStop(0.35, feltCenter);
   grad.addColorStop(1, feltEdge);
+
+  // desenha o felt normalmente (lembrando que as caçapas terão boca desenhada separadamente)
   ctx.fillStyle = grad;
   roundRect(ctx, table.x, table.y, table.width, table.height, 10);
   ctx.fill();
 
-  // subtle inner vignette
+  // leve vinheta interna
   ctx.beginPath();
   roundRect(ctx, table.x, table.y, table.width, table.height, 10);
-  ctx.fillStyle = "rgba(0,0,0,0.06)";
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
   ctx.fill();
 }
 
-function drawPocket(x,y){
-  // pocket outer ring
+
+function drawPocket(px, py){
+  // POSIÇÃO DA "BOCA" deslocada para fora da borda (evita invadir o feltro)
+  // Calculamos direção do centro da mesa para o pocket e deslocamos a boca nessa direção
+  const centerX = table.x + table.width/2;
+  const centerY = table.y + table.height/2;
+  let dx = px - centerX;
+  let dy = py - centerY;
+  const len = Math.hypot(dx, dy) || 1;
+  dx /= len; dy /= len;
+
+  // distância de deslocamento da boca para fora (ajuste aqui se quiser mais/menos)
+  const mouthOffset = 8;
+  const mouthX = px + dx * mouthOffset;
+  const mouthY = py + dy * mouthOffset;
+
+  // raio interno real da boca (menor que pocketRadius para parecer uma abertura)
+  const innerR = table.pocketRadius - 6;
+
+  // 1) desenha anel exterior decorativo (sob a mesa)
   ctx.beginPath();
   ctx.fillStyle = "#1b1108";
-  ctx.arc(x, y, table.pocketRadius + 8, 0, Math.PI*2);
+  ctx.arc(px, py, table.pocketRadius + 8, 0, Math.PI*2);
   ctx.fill();
 
-  // pocket mouth highlight ring
+  // 2) desenha a "boca" real (escura) **mais para fora** (não invade o feltro)
   ctx.beginPath();
-  ctx.fillStyle = "#2b1f16";
-  ctx.arc(x, y, table.pocketRadius + 2, 0, Math.PI*2);
-  ctx.fill();
-
-  // inner mouth (dark)
-  ctx.beginPath();
-  const innerR = table.pocketRadius - 4;
   ctx.fillStyle = pocketColor;
-  ctx.arc(x, y, innerR, 0, Math.PI*2);
+  ctx.arc(mouthX, mouthY, innerR, 0, Math.PI*2);
   ctx.fill();
 
-  // shadow rim (bottom)
+  // 3) desenha o "lábio" (pequena peça do feltro recortada) para parecer que a borda tem uma abertura
+  //    desenhamos um pequeno retângulo arredondado sobre o feltro, na posição da boca, com cor do feltro escurecida
+  ctx.save();
+  // cria um pequeno "slot" sobre o felt (um retângulo arredondado alinhado ao centro da boca)
+  const lipW = innerR * 1.6;
+  const lipH = innerR * 0.45;
   ctx.beginPath();
-  ctx.ellipse(x, y + 6, innerR*0.9, innerR*0.35, 0, 0, Math.PI*2);
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fillStyle = shadeHex(feltCenter, -18); // leve escurecimento para o lábio
+  // posiciona o lip centrado na mouthX/mouthY mas deslocado um pouco pra dentro (para dar efeito)
+  ctx.ellipse(mouthX - dx* (innerR*0.15), mouthY - dy*(innerR*0.15), lipW/2, lipH/2, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  // 4) sombra dentro da boca (profundidade)
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.ellipse(mouthX, mouthY + innerR*0.2, innerR*0.9, innerR*0.5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // 5) pequeno brilho na borda superior do lábio para dar relevo
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.ellipse(mouthX - dx*1.6, mouthY - dy*1.6, innerR*0.7, innerR*0.25, 0, 0, Math.PI*2);
   ctx.fill();
 }
 
