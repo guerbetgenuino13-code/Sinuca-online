@@ -17,6 +17,9 @@ const pocketRadius = 26;
 let cueRecoil = 0;        // animação do recuo atual
 let cueRecoilTarget = 0;  // alvo de recuo quando o jogador tacar
 let simulationRunning = false;
+// pull-back (recuo real do taco)
+let pullBack = 0;      // recuo atual (px)
+let maxPullBack = 80;  // limite máximo de recuo (ajuste se quiser)
 
 const table = {
   x: railOuter,
