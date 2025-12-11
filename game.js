@@ -578,41 +578,38 @@ const stickRecoil = (isAdjustingPower ? 0 : pullBack) + cueRecoil;
     ctx.arc(cueTipX, cueTipY, 3.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // ===========================================
-// NOVA BARRA LATERAL DE FORÇA (independente)
-// ===========================================
+    function drawPowerBar() {
+    const barX = powerBar.x;
+    const barY = H / 2 - powerBar.h / 2;
+    const barW = powerBar.w;
+    const barH = powerBar.h;
 
-// referência da barra
-const barX = powerBar.x;
-const barY = powerBar.y = H / 2 - powerBar.h / 2;
-const barW = powerBar.w;
-const barH = powerBar.h;
+    // fundo externo
+    ctx.beginPath();
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    roundRect(ctx, barX - 6, barY - 6, barW + 12, barH + 12, 6);
+    ctx.fill();
 
-// fundo externo
-ctx.beginPath();
-ctx.fillStyle = "rgba(0,0,0,0.35)";
-roundRect(ctx, barX - 6, barY - 6, barW + 12, barH + 12, 6);
-ctx.fill();
+    // barra
+    ctx.beginPath();
+    ctx.fillStyle = "#2b2b2b";
+    roundRect(ctx, barX, barY, barW, barH, 6);
+    ctx.fill();
 
-// corpo da barra
-ctx.beginPath();
-ctx.fillStyle = "#2b2b2b";
-roundRect(ctx, barX, barY, barW, barH, 6);
-ctx.fill();
+    // preenchimento proporcional
+    const fillW = Math.round((shotPower / 36) * barW);
 
-// preenchimento baseado em shotPower
-const fillW = Math.round((shotPower / 36) * barW);
-ctx.beginPath();
-ctx.fillStyle = "#ffb84d";
-roundRect(ctx, barX, barY, fillW, barH, 6);
-ctx.fill();
+    ctx.beginPath();
+    ctx.fillStyle = "#ffb84d";
+    roundRect(ctx, barX, barY, fillW, barH, 6);
+    ctx.fill();
 
-// texto da barra
-ctx.fillStyle = "#fff";
-ctx.font = "13px sans-serif";
-ctx.textAlign = "center";
-ctx.textBaseline = "middle";
-ctx.fillText("Força: " + shotPower, barX + barW / 2, barY + barH / 2);
+    // texto
+    ctx.fillStyle = "#fff";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Força: " + shotPower, barX + barW / 2, barY + barH / 2);
 }
 
 function limitAimToBalls(white, targetX, targetY) {
@@ -709,12 +706,23 @@ function limitAimToBalls(white, targetX, targetY) {
 }
 
 /* ---------- draw loop ---------- */
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  drawTable();
-  for(const m of mouthPositions) drawPocketByMouth(m);
-  drawCueStick();
-  for(const b of balls) drawPolishedBall(b);
+function draw() {
+    ctx.clearRect(0,0,W,H);
+
+    drawTable();
+
+    // desenha buracos
+    for (const m of mouthPositions) drawPocketByMouth(m);
+
+    // desenha bolas
+    for (const b of balls) drawPolishedBall(b);
+
+    // desenha o taco (por cima das bolas)
+    drawCueStick();
+
+    // desenha barra lateral de força
+    drawPowerBar();
+}
 
   const remaining = balls.filter(b => b.number > 0 && !b.pocketed).length;
   ctx.fillStyle = "#ffffff"; ctx.font = "14px sans-serif"; ctx.textAlign = "left"; ctx.fillText("Bolas restantes: " + remaining, 12, H - 12);
