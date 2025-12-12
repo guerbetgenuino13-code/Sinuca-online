@@ -21,7 +21,24 @@
   <footer class="center small">Teste em desktop para acessar DevTools. Mobile funciona, mas debugar é mais difícil.</footer>
 
   <script src="game.js"></script>
+  <script>
+document.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+}, { passive: false });
+</script>
 </body>
 </html>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;        /* Safari TRAVA a tela de verdade */
+    width: 100%;
+    touch-action: none;     /* bloqueia gestos */
+}
+
+canvas {
+    touch-action: none;
+}
