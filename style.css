@@ -102,3 +102,13 @@ footer.center{
 @media (min-height:900px){
   body{justify-content:center}
 }
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;      /* impede scroll */
+    touch-action: none;    /* impede zoom e gestos */
+}
+
+canvas {
+    touch-action: none;    /* impede arrastar página ao tocar no canvas */
+}
