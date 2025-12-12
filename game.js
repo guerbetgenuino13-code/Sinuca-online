@@ -1,7 +1,7 @@
-/* game.js — Versão final corrigida (mouthPositions fixas dentro do feltro,
-   mira livre, sidebar vertical de força, tacada por pullBack ou barra) */
+/* game.js — Versão final: mira livre (taco acompanha), tacada apenas pela barra lateral,
+   sem pullBack/arraste para bater (opção 1) */
 
-console.log("game.js — pockets corrigidas (fixas, dentro do feltro) - versão ajustada");
+console.log("game.js — versão final: mira livre + tacada só pela barra lateral");
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -16,14 +16,11 @@ let cueRecoil = 0;
 let cueRecoilTarget = 0;
 let simulationRunning = false;
 
-let pullBack = 0;
-let maxPullBack = 120;
-
 let shotPower = 0;            // 0..36 scale
 let isAdjustingPower = false;
 
 const powerBar = {
-  // vertical sidebar no lado direito
+  // barra vertical no lado direito
   x: W - 36,
   y: 60,
   w: 20,
@@ -33,7 +30,8 @@ const powerBar = {
 const table = {
   x: railOuter,
   y: railOuter,
-  width: W - railOuter * 2 - 60, // deixa espaço à direita para a sidebar
+  // deixa espaço à direita para a sidebar
+  width: W - railOuter * 2 - 60,
   height: H - railOuter * 2,
   pocketRadius
 };
@@ -42,9 +40,9 @@ const cx = table.x + table.width / 2;
 const cy = table.y + table.height / 2;
 
 /* ---------- input / aiming state ---------- */
-let aiming = false;
-let mouse = { x: 0, y: 0 };
-let isDragging = false;
+let aiming = true; // mira ativa quando bolas paradas (começa true)
+let mouse = { x: cx + 100, y: cy }; // posição inicial da mira
+let isDragging = false; // usado apenas para mover a mira (não puxa força)
 
 /* ---------- util ---------- */
 function toCanvasCoords(clientX, clientY) {
@@ -56,7 +54,6 @@ function toCanvasCoords(clientX, clientY) {
 }
 
 /* ---------- pockets ---------- */
-/* cantos e meio: mantemos as coordenadas na borda exata da mesa */
 const pockets = [
   { x: table.x, y: table.y },
   { x: table.x + table.width / 2, y: table.y },
@@ -66,10 +63,7 @@ const pockets = [
   { x: table.x + table.width, y: table.y + table.height }
 ];
 
-const PR = pocketRadius;
-/* mouthPositions: deslocamento *para dentro* do feltro (offset positivo) */
 const inwardOffset = 6;
-
 const mouthPositions = pockets.map(p => {
   let dx = cx - p.x;
   let dy = cy - p.y;
@@ -208,6 +202,7 @@ function applyShotWithPower() {
   const white = balls[0];
   if (!white) return;
 
+  // direção da mira (mouse) determina o angulo da tacada
   const dx = mouse.x - white.x;
   const dy = mouse.y - white.y;
   const ang = Math.atan2(dy, dx);
@@ -222,16 +217,6 @@ function applyShotWithPower() {
 
   cueRecoilTarget = Math.min(40, Math.round(shotPower * 2));
   shotPower = 0;
-}
-
-function applyShotUsingRecoil(power, ang) {
-  const white = balls[0];
-  const impulse = power * 0.35;
-
-  white.vx += Math.cos(ang) * impulse;
-  white.vy += Math.sin(ang) * impulse;
-
-  simulationRunning = true;
 }
 
 /* ---------- estado das bolas ---------- */
@@ -251,7 +236,6 @@ function checkAllBallsStoppedAndReactivate() {
     simulationRunning = false;
     aiming = true;
     isDragging = false;
-    pullBack = 0;
     cueRecoil = 0;
   }
 }
@@ -316,7 +300,6 @@ function onPowerMove(pos){
 function onPowerEnd(){
   if(!isAdjustingPower) return;
   isAdjustingPower = false;
-  // atira com a força selecionada
   applyShotWithPower();
 }
 
@@ -407,11 +390,9 @@ function draw(){
 
       const dxm = white.x - mouse.x;
       const dym = white.y - mouse.y;
-      // se player estiver puxando no stick, mostra força a partir de pullBack
       let power = clamp(Math.hypot(dxm,dym)/6,0,36);
-      if(isDragging && pullBack > 0){
-        power = Math.round((pullBack / maxPullBack) * 36);
-      }
+      // mostra o valor atual selecionado na barra quando ajustando
+      if(isAdjustingPower) power = shotPower;
 
       ctx.fillStyle="rgba(255,255,255,0.95)";
       ctx.font="12px sans-serif";
@@ -545,16 +526,14 @@ function drawCueStick(){
   const dy = mouse.y - white.y;
   const ang = Math.atan2(dy, dx);
 
-  const power = Math.round(Math.min(36, pullBack / 3));
-  const stickLen = 100 + power*4;
+  // sem pullBack; stickLen fixo ligeiramente proporcional à distância da mira
+  const stickLen = 140;
 
   const tipX = white.x - Math.cos(ang)*(white.r+4);
   const tipY = white.y - Math.sin(ang)*(white.r+4);
 
-  const stickRecoil = (isAdjustingPower ? 0 : pullBack) + cueRecoil;
-
-  const buttX = tipX - Math.cos(ang)*(stickLen + stickRecoil);
-  const buttY = tipY - Math.sin(ang)*(stickLen + stickRecoil);
+  const buttX = tipX - Math.cos(ang)*(stickLen + cueRecoil);
+  const buttY = tipY - Math.sin(ang)*(stickLen + cueRecoil);
 
   ctx.beginPath();
   ctx.strokeStyle="rgba(0,0,0,0.45)";
@@ -606,7 +585,7 @@ function drawPowerBar(){
   ctx.textAlign = "center";
   ctx.fillText(Math.round(shotPower), powerBar.x + powerBar.w/2, powerBar.y + powerBar.h + 18);
 
-  // dica visual quando ajustando
+  // destaque quando ajustando
   if(isAdjustingPower){
     ctx.strokeStyle = "rgba(255,255,255,0.9)";
     ctx.lineWidth = 2;
@@ -617,29 +596,24 @@ function drawPowerBar(){
 /* ---------- pointer handlers ---------- */
 
 function onPointerDown(e){
+  // só permite mira/tocar quando todas as bolas estiverem paradas
   if(!areBallsStopped()) return;
 
   const pos = e.touches
     ? toCanvasCoords(e.touches[0].clientX,e.touches[0].clientY)
     : toCanvasCoords(e.clientX,e.clientY);
 
+  // se tocou na barra, começa ajuste
   if(onPowerStart(pos)){
-    // entrar em modo de ajuste da barra (mira fica ativa, mas tacada só quando soltar)
     aiming = true;
     mouse = pos;
     return;
   }
 
-  const white = balls[0];
-  const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
-
-  // clique próximo à bola ativa a mira e permite pullBack
-  if(dist <= white.r + 140){
-    aiming = true;
-    isDragging = true;
-    mouse = pos;
-    return;
-  }
+  // toque no pano: apenas coloca a mira naquele ponto (não puxa/atira)
+  aiming = true;
+  isDragging = true;
+  mouse = pos;
 }
 
 function onPointerMove(e){
@@ -655,57 +629,19 @@ function onPointerMove(e){
 
   if(!aiming) return;
 
+  // mover a mira livremente (sem influenciar força)
   mouse = pos;
-
-  if(isDragging){
-    const white = balls[0];
-    const dx = pos.x - white.x;
-    const dy = pos.y - white.y;
-    pullBack = clamp(Math.hypot(dx,dy) - white.r, 0, maxPullBack);
-
-    // enquanto arrasta usamos pullBack para indicar força (não escrevemos shotPower ainda)
-    shotPower = Math.round((pullBack / maxPullBack) * 36);
-  }
 }
 
 function onPointerUp(e){
+  // se estava ajustando a barra, finalizar ajuste e atirar
   if(isAdjustingPower){
     onPowerEnd();
     return;
   }
 
-  if(!isDragging) return;
+  // se não era ajuste da barra, apenas soltar a mira (sem tacada)
   isDragging = false;
-
-  if(!aiming) return;
-
-  const white = balls[0];
-
-  const dx = mouse.x - white.x;
-  const dy = mouse.y - white.y;
-  const ang = Math.atan2(dy, dx);
-
-  // se jogador usou pullBack (arrastou) a força vem de pullBack; caso contrário shotPower já pode estar setado via barra
-  let usedPower = shotPower;
-  if(pullBack > 0 && shotPower === 0){
-    usedPower = Math.round((pullBack / maxPullBack) * 36);
-  }
-  // se ainda zero, tente usar pullBack anyway
-  if(usedPower === 0 && pullBack > 0){
-    usedPower = Math.round((pullBack / maxPullBack) * 36);
-  }
-
-  const impulse = usedPower * 0.32;
-
-  white.vx += Math.cos(ang)*impulse;
-  white.vy += Math.sin(ang)*impulse;
-
-  simulationRunning = true;
-  aiming = false;
-
-  cueRecoilTarget = Math.min(40, usedPower*2);
-  shotPower = 0;
-  pullBack = 0;
 }
 
 /* ---------- listeners ---------- */
@@ -736,6 +672,4 @@ function gameLoop(){
   requestAnimationFrame(gameLoop);
 }
 
-// começar com mira ativa (só quando as bolas estiverem paradas a mira funciona)
-aiming = true;
 gameLoop();
