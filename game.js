@@ -623,9 +623,8 @@ function onPointerMove(e){
 
   if(isAdjustingPower){
     onPowerMove(pos);
-    mouse = pos;
-    return;
-  }
+    return; // não mexe na mira enquanto ajusta força
+}
 
   if(!aiming) return;
 
