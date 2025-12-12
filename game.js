@@ -596,24 +596,30 @@ function drawPowerBar(){
 /* ---------- pointer handlers ---------- */
 
 function onPointerDown(e){
-  // só permite mira/tocar quando todas as bolas estiverem paradas
   if(!areBallsStopped()) return;
 
   const pos = e.touches
     ? toCanvasCoords(e.touches[0].clientX,e.touches[0].clientY)
     : toCanvasCoords(e.clientX,e.clientY);
 
-  // se tocou na barra, começa ajuste
-  if(onPowerStart(pos)){
-    aiming = true;
-    mouse = pos;
-    return;
+  // 1) Se tocou na barra → ajusta força (SEM mexer mira)
+  if (isInsidePowerBar(pos)) {
+    onPowerStart(pos);
+    return; // impede ativar mira
   }
 
-  // toque no pano: apenas coloca a mira naquele ponto (não puxa/atira)
-  aiming = true;
-  isDragging = true;
-  mouse = pos;
+  // 2) Só ativa mira se estiver dentro do pano da mesa
+  const insideTable =
+    pos.x >= table.x &&
+    pos.x <= table.x + table.width &&
+    pos.y >= table.y &&
+    pos.y <= table.y + table.height;
+
+  if (insideTable) {
+    aiming = true;
+    isDragging = true;
+    mouse = pos; // agora sim, mira muda
+  }
 }
 
 function onPointerMove(e){
