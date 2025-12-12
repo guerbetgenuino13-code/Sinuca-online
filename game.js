@@ -1,10 +1,8 @@
-/* game.js — Versão final corrigida (mouthPositions fixas fora do feltro,
-   orientação para dentro, desenho e física alinhados)
-*/
+/* game.js — Versão final corrigida (mouthPositions fixas dentro do feltro,
+   mira livre, sidebar vertical de força, tacada por pullBack ou barra) */
 
-console.log("game.js — pockets corrigidas (fixas, fora do feltro)");
+console.log("game.js — pockets corrigidas (fixas, dentro do feltro) - versão ajustada");
 
-/* ---------- canvas ---------- */
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 const W = canvas.width, H = canvas.height;
@@ -14,27 +12,28 @@ const railOuter = 28;
 const railInner = 12;
 const pocketRadius = 26;
 
-let cueRecoil = 0;        
-let cueRecoilTarget = 0;  
+let cueRecoil = 0;
+let cueRecoilTarget = 0;
 let simulationRunning = false;
 
-let pullBack = 0;      
-let maxPullBack = 80;  
+let pullBack = 0;
+let maxPullBack = 120;
 
-let shotPower = 0;            
-let isAdjustingPower = false; 
+let shotPower = 0;            // 0..36 scale
+let isAdjustingPower = false;
 
 const powerBar = {
-  x: 40,
-  y: 0,
-  w: 200,
-  h: 20
+  // vertical sidebar no lado direito
+  x: W - 36,
+  y: 60,
+  w: 20,
+  h: H - 120
 };
 
 const table = {
   x: railOuter,
   y: railOuter,
-  width: W - railOuter * 2,
+  width: W - railOuter * 2 - 60, // deixa espaço à direita para a sidebar
   height: H - railOuter * 2,
   pocketRadius
 };
@@ -57,17 +56,19 @@ function toCanvasCoords(clientX, clientY) {
 }
 
 /* ---------- pockets ---------- */
+/* cantos e meio: mantemos as coordenadas na borda exata da mesa */
 const pockets = [
-  {x: table.x, y: table.y}, 
-  {x: table.x + table.width/2, y: table.y - 6},
-  {x: table.x + table.width, y: table.y},
-  {x: table.x, y: table.y + table.height},
-  {x: table.x + table.width/2, y: table.y + table.height + 6},
-  {x: table.x + table.width, y: table.y + table.height}
+  { x: table.x, y: table.y },
+  { x: table.x + table.width / 2, y: table.y },
+  { x: table.x + table.width, y: table.y },
+  { x: table.x, y: table.y + table.height },
+  { x: table.x + table.width / 2, y: table.y + table.height },
+  { x: table.x + table.width, y: table.y + table.height }
 ];
 
 const PR = pocketRadius;
-const inwardOffset = -4;
+/* mouthPositions: deslocamento *para dentro* do feltro (offset positivo) */
+const inwardOffset = 6;
 
 const mouthPositions = pockets.map(p => {
   let dx = cx - p.x;
@@ -151,10 +152,10 @@ function updatePhysics(){
       const innerR = table.pocketRadius - 8;
       const d = Math.hypot(b.x - m.mouthX, b.y - m.mouthY);
       if(d < innerR){
-        b.vx = 0; 
+        b.vx = 0;
         b.vy = 0;
         b.pocketed = true;
-        b.x = -1000; 
+        b.x = -1000;
         b.y = -1000;
         break;
       }
@@ -176,7 +177,7 @@ function updatePhysics(){
         const overlap = (minD - d) / 2;
         const nx = dx / d, ny = dy / d;
 
-        A.x -= nx * overlap; 
+        A.x -= nx * overlap;
         A.y -= ny * overlap;
         B.x += nx * overlap;
         B.y += ny * overlap;
@@ -199,7 +200,7 @@ function updatePhysics(){
       }
     }
   }
-}   // ← FECHAMENTO CORRETO DO updatePhysics()
+}
 
 /* ---------- aplicar forças ---------- */
 
@@ -285,20 +286,20 @@ function lighten(hex,frac){
   return "#" + ((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
 }
 
-/* ---------- barra de força ---------- */
+/* ---------- barra de força (vertical) ---------- */
 
 function isInsidePowerBar(pos){
-  const barY = H/2 - powerBar.h/2;
   return pos.x >= powerBar.x &&
          pos.x <= powerBar.x + powerBar.w &&
-         pos.y >= barY &&
-         pos.y <= barY + powerBar.h;
+         pos.y >= powerBar.y &&
+         pos.y <= powerBar.y + powerBar.h;
 }
 
 function updatePowerFromPos(pos){
-  let v = pos.x - powerBar.x;
-  v = Math.max(0,Math.min(powerBar.w,v));
-  shotPower = Math.round((v / powerBar.w) * 36);
+  // vertical: 0 (bottom) .. h (top)
+  let v = powerBar.y + powerBar.h - pos.y; // distância do fundo
+  v = Math.max(0, Math.min(powerBar.h, v));
+  shotPower = Math.round((v / powerBar.h) * 36);
 }
 
 function onPowerStart(pos){
@@ -315,10 +316,11 @@ function onPowerMove(pos){
 function onPowerEnd(){
   if(!isAdjustingPower) return;
   isAdjustingPower = false;
+  // atira com a força selecionada
   applyShotWithPower();
 }
 
-/* ---------- limites de mira (corrigido duplicação) ---------- */
+/* ---------- limites de mira ---------- */
 
 function limitAimToBorders(white,targetX,targetY){
   return {
@@ -358,7 +360,7 @@ function limitAimToBalls(white,targetX,targetY){
   return {x:bestX,y:bestY};
 }
 
-/* ---------- DRAW (Bloco antes quebrado: corrigido!) ---------- */
+/* ---------- DRAW ---------- */
 
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -373,7 +375,7 @@ function draw(){
 
   drawPowerBar();
 
-  /* --- texto (ANTES ESTAVA FORA DO DRAW E CAUSAVA TELA PRETA) --- */
+  /* --- texto --- */
   const remaining = balls.filter(b => b.number>0 && !b.pocketed).length;
   ctx.fillStyle="#fff";
   ctx.font="14px sans-serif";
@@ -405,7 +407,11 @@ function draw(){
 
       const dxm = white.x - mouse.x;
       const dym = white.y - mouse.y;
-      const power = clamp(Math.hypot(dxm,dym)/6,0,36);
+      // se player estiver puxando no stick, mostra força a partir de pullBack
+      let power = clamp(Math.hypot(dxm,dym)/6,0,36);
+      if(isDragging && pullBack > 0){
+        power = Math.round((pullBack / maxPullBack) * 36);
+      }
 
       ctx.fillStyle="rgba(255,255,255,0.95)";
       ctx.font="12px sans-serif";
@@ -413,6 +419,7 @@ function draw(){
     }
   }
 }
+
 /* ---------- desenho da mesa ---------- */
 
 function drawTable() {
@@ -571,6 +578,42 @@ function drawCueStick(){
   ctx.stroke();
 }
 
+/* ---------- power bar draw ---------- */
+
+function drawPowerBar(){
+  // fundo
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  roundRect(ctx, powerBar.x-6, powerBar.y-6, powerBar.w+12, powerBar.h+12, 8);
+  ctx.fill();
+
+  // track
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  roundRect(ctx, powerBar.x, powerBar.y, powerBar.w, powerBar.h, 6);
+  ctx.fill();
+
+  // nivel (de baixo para cima)
+  const hLevel = (shotPower / 36) * powerBar.h;
+  ctx.beginPath();
+  ctx.fillStyle = "rgba(220,80,30,0.95)";
+  roundRect(ctx, powerBar.x, powerBar.y + powerBar.h - hLevel, powerBar.w, hLevel, 6);
+  ctx.fill();
+
+  // indicador com valor
+  ctx.fillStyle = "#fff";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(Math.round(shotPower), powerBar.x + powerBar.w/2, powerBar.y + powerBar.h + 18);
+
+  // dica visual quando ajustando
+  if(isAdjustingPower){
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(powerBar.x-2, powerBar.y-2, powerBar.w+4, powerBar.h+4);
+  }
+}
+
 /* ---------- pointer handlers ---------- */
 
 function onPointerDown(e){
@@ -581,13 +624,16 @@ function onPointerDown(e){
     : toCanvasCoords(e.clientX,e.clientY);
 
   if(onPowerStart(pos)){
+    // entrar em modo de ajuste da barra (mira fica ativa, mas tacada só quando soltar)
     aiming = true;
+    mouse = pos;
     return;
   }
 
   const white = balls[0];
   const dist = Math.hypot(pos.x - white.x, pos.y - white.y);
 
+  // clique próximo à bola ativa a mira e permite pullBack
   if(dist <= white.r + 140){
     aiming = true;
     isDragging = true;
@@ -616,6 +662,9 @@ function onPointerMove(e){
     const dx = pos.x - white.x;
     const dy = pos.y - white.y;
     pullBack = clamp(Math.hypot(dx,dy) - white.r, 0, maxPullBack);
+
+    // enquanto arrasta usamos pullBack para indicar força (não escrevemos shotPower ainda)
+    shotPower = Math.round((pullBack / maxPullBack) * 36);
   }
 }
 
@@ -636,7 +685,17 @@ function onPointerUp(e){
   const dy = mouse.y - white.y;
   const ang = Math.atan2(dy, dx);
 
-  const impulse = shotPower * 0.32;
+  // se jogador usou pullBack (arrastou) a força vem de pullBack; caso contrário shotPower já pode estar setado via barra
+  let usedPower = shotPower;
+  if(pullBack > 0 && shotPower === 0){
+    usedPower = Math.round((pullBack / maxPullBack) * 36);
+  }
+  // se ainda zero, tente usar pullBack anyway
+  if(usedPower === 0 && pullBack > 0){
+    usedPower = Math.round((pullBack / maxPullBack) * 36);
+  }
+
+  const impulse = usedPower * 0.32;
 
   white.vx += Math.cos(ang)*impulse;
   white.vy += Math.sin(ang)*impulse;
@@ -644,7 +703,7 @@ function onPointerUp(e){
   simulationRunning = true;
   aiming = false;
 
-  cueRecoilTarget = Math.min(40, shotPower*2);
+  cueRecoilTarget = Math.min(40, usedPower*2);
   shotPower = 0;
   pullBack = 0;
 }
@@ -677,5 +736,6 @@ function gameLoop(){
   requestAnimationFrame(gameLoop);
 }
 
+// começar com mira ativa (só quando as bolas estiverem paradas a mira funciona)
 aiming = true;
 gameLoop();
