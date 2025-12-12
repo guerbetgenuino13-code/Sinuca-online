@@ -2,11 +2,18 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- 🔒 BLOQUEIA ZOOM EM iOS E ANDROID -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,
+                 maximum-scale=1.0, user-scalable=no">
+
   <title>Sinuca Online — MVP</title>
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
+
   <header class="center">
     <div class="logo">🎱 Sinuca Online</div>
     <p class="sub">MVP — mesa, mira, tacada, física básica e buracos.</p>
@@ -18,27 +25,39 @@
     </div>
   </main>
 
-  <footer class="center small">Teste em desktop para acessar DevTools. Mobile funciona, mas debugar é mais difícil.</footer>
+  <footer class="center small">
+    Teste em desktop para acessar DevTools. Mobile funciona, mas debugar é mais difícil.
+  </footer>
 
   <script src="game.js"></script>
+
+  <!-- 🔒 BLOQUEAR SCROLL, ZOOM, BOUNCE (iOS + ANDROID) -->
   <script>
-document.addEventListener('touchmove', function(e) {
-    e.preventDefault();
-}, { passive: false });
-</script>
+    // BLOQUEAR SCROLL EM AMBOS
+    document.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+    }, { passive: false });
+
+    // BLOQUEAR PINCH-ZOOM
+    document.addEventListener('gesturestart', function (e) {
+        e.preventDefault();
+    });
+
+    // BLOQUEAR DOUBLE-TAP ZOOM (iOS)
+    let lastTouch = 0;
+    document.addEventListener('touchend', function (e) {
+        const now = Date.now();
+        if (now - lastTouch <= 300) {
+            e.preventDefault();
+        }
+        lastTouch = now;
+    });
+
+    // BLOQUEAR ZOOM POR CTRL/SCROLL (Android e Desktop)
+    document.addEventListener('wheel', function (e) {
+        if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+  </script>
+
 </body>
 </html>
-
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-    position: fixed;        /* Safari TRAVA a tela de verdade */
-    width: 100%;
-    touch-action: none;     /* bloqueia gestos */
-}
-
-canvas {
-    touch-action: none;
-}
